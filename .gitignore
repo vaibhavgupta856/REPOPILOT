@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/.venv/
+backend/venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+frontend/dist/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+backend/.env
+*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# RepoPilot runtime (generated at dev time — never commit)
+workspace/**
+!workspace/.gitkeep
+sandbox/**
+!sandbox/.gitkeep
+backend/*.db
+backend/.pytest_cache/
+.pytest_cache/
+
+# Frontend build cache
+frontend/.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

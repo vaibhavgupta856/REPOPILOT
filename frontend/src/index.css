@@ -1,0 +1,168 @@
+@import "tailwindcss";
+
+:root {
+  --forge-bg: #07070b;
+  --forge-surface: rgba(18, 18, 24, 0.72);
+  --forge-border: rgba(255, 255, 255, 0.08);
+  --forge-glow: rgba(249, 115, 22, 0.35);
+  --forge-accent: #f97316;
+  --forge-accent-soft: #fb923c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--forge-bg);
+  color: #e4e4e7;
+  font-family: "DM Sans", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  height: 100vh;
+}
+
+.font-mono-forge {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+}
+
+/* Ambient background */
+.forge-bg {
+  position: relative;
+  background:
+    radial-gradient(ellipse 80% 50% at 20% -10%, rgba(249, 115, 22, 0.15), transparent 50%),
+    radial-gradient(ellipse 60% 40% at 90% 10%, rgba(99, 102, 241, 0.12), transparent 45%),
+    radial-gradient(ellipse 50% 30% at 50% 100%, rgba(16, 185, 129, 0.06), transparent 40%),
+    var(--forge-bg);
+}
+
+.forge-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 64px 64px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 30%, black, transparent);
+  pointer-events: none;
+}
+
+.forge-glass {
+  background: var(--forge-surface);
+  border: 1px solid var(--forge-border);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.forge-glass-strong {
+  background: rgba(12, 12, 16, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.forge-input {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.35);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.forge-input:focus {
+  outline: none;
+  border-color: rgba(249, 115, 22, 0.6);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.12);
+}
+
+.forge-btn-primary {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+  color: #0a0a0f;
+  font-weight: 600;
+  transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.25);
+}
+
+.forge-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 28px rgba(249, 115, 22, 0.35);
+  transform: translateY(-1px);
+}
+
+.forge-btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.forge-btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.forge-btn-ghost {
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.forge-btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.forge-logo-glow {
+  box-shadow: 0 0 24px rgba(249, 115, 22, 0.4);
+}
+
+@keyframes forge-pulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes forge-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.forge-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid rgba(249, 115, 22, 0.2);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: forge-spin 0.7s linear infinite;
+}
+
+.forge-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.06) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: forge-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes forge-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.forge-agent-working {
+  animation: forge-pulse 1.5s ease-in-out infinite;
+}
