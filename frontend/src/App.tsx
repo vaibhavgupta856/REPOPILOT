@@ -15,7 +15,7 @@ import {
   type RepositorySummary,
   type TaskRun,
 } from "./lib/api";
-import { resolveHealthBase, isHostedFrontend } from "./lib/config";
+import { resolveHealthBase } from "./lib/config";
 import "./index.css";
 
 const API_HEALTH = resolveHealthBase();
