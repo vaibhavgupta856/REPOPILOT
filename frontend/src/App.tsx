@@ -15,9 +15,10 @@ import {
   type RepositorySummary,
   type TaskRun,
 } from "./lib/api";
+import { resolveHealthBase, isHostedFrontend } from "./lib/config";
 import "./index.css";
 
-const API_HEALTH = import.meta.env.VITE_API_URL?.replace("/api", "") ?? "http://localhost:8000";
+const API_HEALTH = resolveHealthBase();
 
 async function checkBackend(): Promise<boolean> {
   try {

@@ -1,4 +1,6 @@
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
+import { resolveApiBase, isHostedFrontend } from "./config";
+
+const API_BASE = resolveApiBase();
 const TOKEN_KEY = "repopilot_auth_token";
 
 export function getAuthToken(): string | null {
@@ -31,7 +33,18 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
   if (init.headers) {
     Object.assign(headers, init.headers);
   }
-  return fetch(`${API_BASE}${path}`, { ...init, headers });
+  try {
+    return await fetch(`${API_BASE}${path}`, { ...init, headers });
+  } catch {
+    if (isHostedFrontend() && API_BASE.includes("localhost")) {
+      throw new Error(
+        "Backend API is not configured for this deployment. Set VITE_API_URL in Vercel and deploy the API on Render.",
+      );
+    }
+    throw new Error(
+      `Cannot reach the API at ${API_BASE}. Check that the backend is running and CORS is configured.`,
+    );
+  }
 }
 
 async function parseError(res: Response, fallback: string): Promise<string> {
