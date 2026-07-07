@@ -69,9 +69,11 @@ interface FileTreeProps {
   files: WorkspaceFileInfo[];
   selectedPath: string | null;
   onSelectFile: (path: string) => void;
+  onNewFile?: () => void;
+  onRefresh?: () => void;
 }
 
-export function FileTree({ files, selectedPath, onSelectFile }: FileTreeProps) {
+export function FileTree({ files, selectedPath, onSelectFile, onNewFile, onRefresh }: FileTreeProps) {
   const tree = useMemo(() => buildFileTree(files), [files]);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
@@ -165,8 +167,49 @@ export function FileTree({ files, selectedPath, onSelectFile }: FileTreeProps) {
   }
 
   if (tree.length === 0) {
-    return <p className="px-2 text-xs text-zinc-600">No files yet</p>;
+    return (
+      <div className="px-2">
+        <p className="mb-2 text-xs text-zinc-600">No files yet</p>
+        {onNewFile && (
+          <button
+            type="button"
+            onClick={onNewFile}
+            className="rounded-lg bg-white/5 px-2 py-1 text-[10px] text-zinc-400 hover:bg-white/10"
+          >
+            + New file
+          </button>
+        )}
+      </div>
+    );
   }
 
-  return <div className="py-0.5">{tree.map((node) => renderNode(node, 0))}</div>;
+  return (
+    <div className="py-0.5">
+      {(onNewFile || onRefresh) && (
+        <div className="mb-2 flex gap-1 px-1">
+          {onNewFile && (
+            <button
+              type="button"
+              onClick={onNewFile}
+              title="New file"
+              className="rounded px-2 py-0.5 text-[10px] text-zinc-500 hover:bg-white/5 hover:text-zinc-300"
+            >
+              + File
+            </button>
+          )}
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              title="Refresh"
+              className="rounded px-2 py-0.5 text-[10px] text-zinc-500 hover:bg-white/5 hover:text-zinc-300"
+            >
+              ↻
+            </button>
+          )}
+        </div>
+      )}
+      {tree.map((node) => renderNode(node, 0))}
+    </div>
+  );
 }

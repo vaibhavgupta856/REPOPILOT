@@ -1,6 +1,8 @@
 import Editor, { type OnMount } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { createEditorHandle, monacoOptionsFromSettings, type EditorHandle } from "../lib/editorHandle";
+import type { EditorSettings } from "../lib/editorSettings";
 import { languageFromPath } from "../lib/languageFromPath";
 
 interface CodeEditorProps {
@@ -8,21 +10,21 @@ interface CodeEditorProps {
   value: string;
   changedLines: number[];
   acceptedLines: number[];
+  settings: EditorSettings;
   onChange: (value: string) => void;
   onCursorChange?: (line: number, column: number) => void;
 }
 
-export function CodeEditor({
-  path,
-  value,
-  changedLines,
-  acceptedLines,
-  onChange,
-  onCursorChange,
-}: CodeEditorProps) {
+export const CodeEditor = forwardRef<EditorHandle, CodeEditorProps>(function CodeEditor(
+  { path, value, changedLines, acceptedLines, settings, onChange, onCursorChange },
+  ref,
+) {
   const editorRef = useRef<editor.IStandaloneCodeEditor | null>(null);
   const monacoRef = useRef<typeof import("monaco-editor") | null>(null);
   const decoRef = useRef<editor.IEditorDecorationsCollection | null>(null);
+  const handleRef = useRef<EditorHandle>(createEditorHandle(() => editorRef.current));
+
+  useImperativeHandle(ref, () => handleRef.current, []);
 
   const acceptedSet = new Set(acceptedLines);
   const pendingChanges = changedLines.filter((l) => !acceptedSet.has(l));
@@ -70,26 +72,13 @@ export function CodeEditor({
         "editor.selectionBackground": "#f9731640",
         "editor.inactiveSelectionBackground": "#f9731620",
         "minimap.background": "#0c0c10",
+        "editorStickyScroll.background": "#0a0a0e",
+        "editorStickyScrollHover.background": "#ffffff10",
       },
     });
     monaco.editor.setTheme("repopilot-dark");
 
-    ed.updateOptions({
-      fontFamily: "JetBrains Mono, ui-monospace, monospace",
-      fontSize: 13,
-      lineHeight: 22,
-      minimap: { enabled: true },
-      scrollBeyondLastLine: false,
-      wordWrap: "on",
-      glyphMargin: true,
-      renderLineHighlight: "all",
-      automaticLayout: true,
-      tabSize: 2,
-      bracketPairColorization: { enabled: true },
-      smoothScrolling: true,
-      cursorBlinking: "smooth",
-      padding: { top: 8 },
-    });
+    ed.updateOptions(monacoOptionsFromSettings(settings));
 
     ed.onDidChangeCursorPosition((e) => {
       onCursorChange?.(e.position.lineNumber, e.position.column);
@@ -97,6 +86,10 @@ export function CodeEditor({
 
     applyDecorations(ed, monaco);
   };
+
+  useEffect(() => {
+    editorRef.current?.updateOptions(monacoOptionsFromSettings(settings));
+  }, [settings]);
 
   useEffect(() => {
     const ed = editorRef.current;
@@ -120,7 +113,8 @@ export function CodeEditor({
       }
       options={{
         readOnly: false,
+        ...monacoOptionsFromSettings(settings),
       }}
     />
   );
-}
+});

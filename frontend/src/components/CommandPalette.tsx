@@ -93,6 +93,94 @@ export function CommandPalette({ open, commands, onClose }: CommandPaletteProps)
   );
 }
 
+interface SymbolQuickOpenProps {
+  open: boolean;
+  symbols: { name: string; line: number; kind: string }[];
+  onClose: () => void;
+  onGo: (line: number) => void;
+}
+
+export function SymbolQuickOpen({ open, symbols, onClose, onGo }: SymbolQuickOpenProps) {
+  const [filter, setFilter] = useState("");
+  const [index, setIndex] = useState(0);
+
+  const filtered = symbols
+    .filter((s) => s.name.toLowerCase().includes(filter.toLowerCase()))
+    .slice(0, 40);
+
+  useEffect(() => {
+    if (!open) {
+      setFilter("");
+      setIndex(0);
+    }
+  }, [open]);
+
+  useEffect(() => {
+    setIndex(0);
+  }, [filter]);
+
+  if (!open) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 pt-[12vh] backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="forge-glass-strong w-full max-w-lg overflow-hidden rounded-xl shadow-2xl ring-1 ring-white/10"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <input
+          autoFocus
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") onClose();
+            if (e.key === "ArrowDown") {
+              e.preventDefault();
+              setIndex((i) => Math.min(i + 1, filtered.length - 1));
+            }
+            if (e.key === "ArrowUp") {
+              e.preventDefault();
+              setIndex((i) => Math.max(i - 1, 0));
+            }
+            if (e.key === "Enter" && filtered[index]) {
+              onGo(filtered[index].line);
+              onClose();
+            }
+          }}
+          placeholder="Go to symbol in file…"
+          className="w-full border-b border-white/10 bg-transparent px-4 py-3 font-mono-forge text-sm text-zinc-100 outline-none placeholder:text-zinc-600"
+        />
+        <ul className="max-h-72 overflow-y-auto py-1">
+          {filtered.map((sym, i) => (
+            <li key={`${sym.line}-${sym.name}`}>
+              <button
+                type="button"
+                onClick={() => {
+                  onGo(sym.line);
+                  onClose();
+                }}
+                className={`flex w-full items-center justify-between px-4 py-2 text-left text-sm ${
+                  i === index ? "bg-orange-500/15 text-orange-200" : "text-zinc-300 hover:bg-white/5"
+                }`}
+              >
+                <span className="font-mono-forge">{sym.name}</span>
+                <span className="text-[10px] text-zinc-600">
+                  {sym.kind} :{sym.line}
+                </span>
+              </button>
+            </li>
+          ))}
+          {filtered.length === 0 && (
+            <li className="px-4 py-3 text-sm text-zinc-600">No symbols</li>
+          )}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 interface QuickOpenProps {
   open: boolean;
   files: string[];

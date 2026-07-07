@@ -223,6 +223,49 @@ body {
   background: rgba(16, 185, 129, 0.2);
 }
 
+.forge-md-preview h1,
+.forge-md-preview h2,
+.forge-md-preview h3 {
+  margin: 0.75em 0 0.35em;
+  font-weight: 600;
+  color: #f4f4f5;
+}
+
+.forge-md-preview h1 { font-size: 1.35rem; }
+.forge-md-preview h2 { font-size: 1.15rem; }
+.forge-md-preview h3 { font-size: 1rem; }
+
+.forge-md-preview p {
+  margin: 0.5em 0;
+}
+
+.forge-md-preview code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-size: 0.9em;
+}
+
+.forge-md-preview pre.forge-md-pre {
+  margin: 0.75em 0;
+  padding: 0.75em;
+  overflow-x: auto;
+  border-radius: 8px;
+  background: #0a0a0e;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.forge-md-preview a {
+  color: #fb923c;
+  text-decoration: underline;
+}
+
+.forge-md-preview li {
+  margin-left: 1.25em;
+  list-style: disc;
+}
+
 /* Terminal */
 .forge-terminal {
   position: relative;

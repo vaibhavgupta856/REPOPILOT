@@ -6,9 +6,10 @@ interface StatusBarProps {
   column: number;
   dirty: boolean;
   branch?: string;
+  tabSize?: number;
 }
 
-export function StatusBar({ path, line, column, dirty, branch = "main" }: StatusBarProps) {
+export function StatusBar({ path, line, column, dirty, branch = "main", tabSize = 2 }: StatusBarProps) {
   return (
     <div className="flex shrink-0 items-center justify-between border-t border-white/5 bg-[#007acc]/20 px-3 py-0.5 font-mono-forge text-[10px] text-zinc-300">
       <div className="flex items-center gap-3">
@@ -28,7 +29,7 @@ export function StatusBar({ path, line, column, dirty, branch = "main" }: Status
           </span>
         )}
         <span>UTF-8</span>
-        <span>Spaces: 2</span>
+        <span>Spaces: {tabSize}</span>
       </div>
     </div>
   );

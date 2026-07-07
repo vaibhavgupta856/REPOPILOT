@@ -1,4 +1,4 @@
-export type SidebarView = "explorer" | "search";
+export type SidebarView = "explorer" | "search" | "outline" | "settings";
 
 interface ActivityBarProps {
   active: SidebarView;
@@ -10,6 +10,8 @@ interface ActivityBarProps {
 const ITEMS: { id: SidebarView; icon: string; label: string }[] = [
   { id: "explorer", icon: "📁", label: "Explorer" },
   { id: "search", icon: "🔍", label: "Search" },
+  { id: "outline", icon: "≡", label: "Outline" },
+  { id: "settings", icon: "⚙", label: "Settings" },
 ];
 
 export function ActivityBar({ active, sidebarOpen, onSelect, onToggleSidebar }: ActivityBarProps) {
