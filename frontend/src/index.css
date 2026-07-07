@@ -166,6 +166,41 @@ body {
   animation: forge-pulse 1.5s ease-in-out infinite;
 }
 
+/* Resizable split panes (VS Code style) */
+.forge-split-handle {
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.forge-split-handle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.06);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.forge-split-handle:hover::after,
+.forge-split-handle:active::after {
+  opacity: 1;
+  background: rgba(249, 115, 22, 0.45);
+}
+
+.forge-panel-title {
+  letter-spacing: 0.12em;
+}
+
+.forge-editor-tab {
+  border-bottom: 2px solid transparent;
+}
+
+.forge-editor-tab-active {
+  border-bottom-color: #f97316;
+  color: #fdba74;
+  background: rgba(249, 115, 22, 0.06);
+}
+
 /* Terminal */
 .forge-terminal {
   position: relative;

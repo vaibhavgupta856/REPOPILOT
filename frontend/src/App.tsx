@@ -4,6 +4,7 @@ import { AuthPage } from "./components/AuthPage";
 import { ForgeIDE } from "./components/ForgeIDE";
 import { LoadingScreen } from "./components/LoadingScreen";
 import { Logo } from "./components/Logo";
+import { SplitPane } from "./components/SplitPane";
 import {
   clearAuthToken,
   downloadRepoZip,
@@ -244,13 +245,16 @@ export default function App() {
       )}
 
       {repo ? (
-        <div className="relative z-0 flex min-h-0 flex-1 flex-col gap-3 p-2 sm:p-3 lg:flex-row">
-          <div className="min-w-0 flex-[3]">
-            <ForgeIDE repoId={repo.id} refreshKey={editorRefresh} />
-          </div>
-          <div className="h-[420px] w-full shrink-0 lg:h-auto lg:w-80">
-            <AgentPanel repo={repo} onTaskComplete={onTaskComplete} />
-          </div>
+        <div className="relative z-0 min-h-0 flex-1 p-2 sm:p-3">
+          <SplitPane
+            orientation="horizontal"
+            initialRatio={0.74}
+            minFirst={400}
+            minSecond={280}
+            className="h-full min-h-[520px]"
+            first={<ForgeIDE repoId={repo.id} refreshKey={editorRefresh} />}
+            second={<AgentPanel repo={repo} onTaskComplete={onTaskComplete} />}
+          />
         </div>
       ) : (
         <div className="relative flex flex-1 flex-col items-center justify-center gap-8 p-8 text-center">

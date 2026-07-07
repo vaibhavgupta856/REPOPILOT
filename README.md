@@ -1,5 +1,13 @@
 # RepoPilot
 
+<h1 align="center">
+  <a href="https://frontend-chi-three-58.vercel.app">🚀 Try RepoPilot Live</a>
+</h1>
+
+<h2 align="center">
+  <a href="https://frontend-chi-three-58.vercel.app">https://frontend-chi-three-58.vercel.app</a>
+</h2>
+
 **RepoPilot** is an autonomous software engineering agent. Point it at a GitHub repository, describe what you want built or changed, and it plans the work, writes code, runs tests, fixes failures, and presents the result in a live IDE for review.
 
 **Operating cost to you: $0** — inference runs on your own LLM API key (BYOK) or a local Ollama instance.
@@ -320,7 +328,7 @@ Repo: [github.com/vaibhavgupta856/REPOPILOT](https://github.com/vaibhavgupta856/
 
 1. Go to [vercel.com](https://vercel.com) → **Add New Project** → import `vaibhavgupta856/REPOPILOT`
 2. Set **Root Directory** to `frontend` (important — keeps Vercel from picking up the Python backend)
-3. **Project name:** `RepoPilot` → live URL: **`https://repopilot.vercel.app`**
+3. **Project name:** `RepoPilot` → live URL: **`https://frontend-chi-three-58.vercel.app`**
 4. **Environment variable:** `VITE_API_URL` = `https://YOUR-RENDER-URL.onrender.com/api`
 5. Deploy
 
@@ -335,7 +343,7 @@ Set `VITE_API_URL` in the Vercel dashboard under **Settings → Environment Vari
 ### 4. Production checklist
 
 1. Set a strong `JWT_SECRET` on Render
-2. Set `FRONTEND_URL` on Render to `https://repopilot.vercel.app`
+2. Set `FRONTEND_URL` on Render to `https://frontend-chi-three-58.vercel.app`
 3. Use HTTPS on both services (automatic on Vercel/Render)
 4. **Ollama on hosted demos:** Ollama does **not** work for visitors on a typical cloud deploy unless you run Ollama on the same server with enough RAM. The UI shows a notice when Ollama is selected on a hosted site and directs users to **clone the repo locally** and install [Ollama](https://ollama.com) to use that feature.
 5. For hosted demos, prefer **OpenRouter** (or other cloud keys) in the Agent panel — visitors paste their own key
