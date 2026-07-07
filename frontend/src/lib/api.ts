@@ -50,6 +50,14 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
 async function parseError(res: Response, fallback: string): Promise<string> {
   const err = await res.json().catch(() => ({ detail: res.statusText }));
   if (typeof err.detail === "string") return err.detail;
+  if (Array.isArray(err.detail)) {
+    return err.detail
+      .map((item: { loc?: (string | number)[]; msg?: string }) => {
+        const field = item.loc?.slice(1).join(".") || "request";
+        return `${field}: ${item.msg ?? "invalid"}`;
+      })
+      .join("; ");
+  }
   return fallback;
 }
 
@@ -102,15 +110,19 @@ export async function getCurrentUser(): Promise<AuthUser> {
   return res.json();
 }
 
-export type RepositorySource = "github";
+export type RepositorySource = "github" | "workspace";
 export type LLMProvider =
   | "auto"
   | "openai"
   | "anthropic"
   | "gemini"
   | "openrouter"
+  | "groq"
+  | "deepseek"
+  | "mistral"
   | "cursor"
-  | "ollama";
+  | "ollama"
+  | "custom";
 export type TaskStatus =
   | "pending"
   | "planning"
@@ -246,6 +258,15 @@ export async function scanRepository(github_url: string): Promise<ScanResponse> 
     body: JSON.stringify({ github_url }),
   });
   if (!res.ok) throw new Error(await parseError(res, "Scan failed"));
+  return res.json();
+}
+
+export async function createWorkspace(name: string): Promise<ScanResponse> {
+  const res = await apiFetch("/repositories/workspace", {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) throw new Error(await parseError(res, "Workspace creation failed"));
   return res.json();
 }
 

@@ -17,6 +17,8 @@ def format_llm_error(exc: Exception) -> str:
     if "AuthenticationError" in type(exc).__name__ or "401" in msg or "invalid api key" in msg.lower():
         if "openrouter" in msg.lower():
             return "Invalid OpenRouter API key. Create one at https://openrouter.ai/keys"
+        if "groq" in msg.lower():
+            return "Invalid Groq API key. Create one at https://console.groq.com/keys"
         if "cursor" in msg.lower() or "crsr_" in msg.lower():
             return "Invalid Cursor API key. Create one at https://cursor.com/dashboard/integrations"
         return "Invalid API key. Check your key in the provider dashboard."

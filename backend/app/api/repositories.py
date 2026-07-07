@@ -5,7 +5,12 @@ from sqlalchemy.orm import Session
 from app.db.models import User
 from app.db.session import get_db
 from app.deps import get_current_user, get_repo_for_user
-from app.models.repository import RepositorySummary, ScanRequest, ScanResponse
+from app.models.repository import (
+    CreateWorkspaceRequest,
+    RepositorySummary,
+    ScanRequest,
+    ScanResponse,
+)
 from app.models.workspace import (
     AcceptAllRequest,
     AcceptLinesRequest,
@@ -22,6 +27,7 @@ from app.services.repo_workspace import (
     load_pending_changes,
 )
 from app.services.repository_scanner import (
+    create_workspace,
     list_summaries,
     load_summary,
     record_to_summary,
@@ -51,6 +57,20 @@ async def scan_repo(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Scan failed: {exc}") from exc
+
+
+@router.post("/workspace", response_model=ScanResponse)
+async def create_blank_workspace(
+    request: CreateWorkspaceRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ScanResponse:
+    try:
+        return create_workspace(db, user.id, request.name)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Workspace creation failed: {exc}") from exc
 
 
 @router.get("", response_model=list[RepositorySummary])

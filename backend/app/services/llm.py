@@ -34,13 +34,22 @@ def resolve_llm_config(config: LLMConfig) -> LLMConfig:
         if detected:
             provider = detected
         elif config.api_key:
-            raise ValueError(
-                "Could not detect provider from this API key. "
-                "Use Advanced settings to pick a provider, or paste a supported key "
-                "(OpenRouter, OpenAI, Anthropic, Gemini, or Cursor crsr_…)."
-            )
+            if config.model and "/" in config.model:
+                provider = LLMProvider.CUSTOM
+            else:
+                raise ValueError(
+                    "Could not detect provider from this API key. "
+                    "Open Advanced and pick your provider (Groq, OpenAI, etc.), "
+                    "or enter a LiteLLM model like groq/llama-3.1-8b-instant."
+                )
         else:
             provider = LLMProvider.OLLAMA
+
+    if provider == LLMProvider.CUSTOM and (not config.model or "/" not in config.model):
+        raise ValueError(
+            "Custom provider requires a model in provider/model format "
+            "(e.g. groq/llama-3.1-8b-instant, deepseek/deepseek-chat)."
+        )
 
     model = config.model or DEFAULT_MODELS.get(provider)
     return config.model_copy(update={"provider": provider, "model": model})
@@ -57,6 +66,12 @@ def _configured_key_for_provider(config: LLMConfig) -> str | None:
         return os.getenv("GEMINI_API_KEY")
     if config.provider == LLMProvider.OPENROUTER:
         return os.getenv("OPENROUTER_API_KEY")
+    if config.provider == LLMProvider.GROQ:
+        return os.getenv("GROQ_API_KEY")
+    if config.provider == LLMProvider.DEEPSEEK:
+        return os.getenv("DEEPSEEK_API_KEY")
+    if config.provider == LLMProvider.MISTRAL:
+        return os.getenv("MISTRAL_API_KEY")
     if config.provider == LLMProvider.CURSOR:
         return os.getenv("CURSOR_API_KEY")
     return None
@@ -74,6 +89,9 @@ def _assert_provider_credentials(config: LLMConfig) -> None:
 
 
 def _resolve_model(config: LLMConfig) -> str:
+    if config.provider == LLMProvider.CUSTOM:
+        return config.model or DEFAULT_MODELS[LLMProvider.CUSTOM]
+
     model = config.model or DEFAULT_MODELS[config.provider]
     if config.provider == LLMProvider.OLLAMA and not model.startswith("ollama/"):
         return f"ollama/{model}"
@@ -83,6 +101,12 @@ def _resolve_model(config: LLMConfig) -> str:
         return f"anthropic/{model.removeprefix('anthropic/')}"
     if config.provider == LLMProvider.OPENROUTER and not model.startswith("openrouter/"):
         return f"openrouter/{model.removeprefix('openrouter/')}"
+    if config.provider == LLMProvider.GROQ and not model.startswith("groq/"):
+        return f"groq/{model.removeprefix('groq/')}"
+    if config.provider == LLMProvider.DEEPSEEK and not model.startswith("deepseek/"):
+        return f"deepseek/{model.removeprefix('deepseek/')}"
+    if config.provider == LLMProvider.MISTRAL and not model.startswith("mistral/"):
+        return f"mistral/{model.removeprefix('mistral/')}"
     if config.provider == LLMProvider.OPENAI and not model.startswith("openai/"):
         if not model.startswith("gpt-"):
             return f"openai/{model.removeprefix('openai/')}"
@@ -99,6 +123,12 @@ def _apply_env_keys(config: LLMConfig) -> None:
             os.environ["GEMINI_API_KEY"] = config.api_key
         elif config.provider == LLMProvider.OPENROUTER:
             os.environ["OPENROUTER_API_KEY"] = config.api_key
+        elif config.provider == LLMProvider.GROQ:
+            os.environ["GROQ_API_KEY"] = config.api_key
+        elif config.provider == LLMProvider.DEEPSEEK:
+            os.environ["DEEPSEEK_API_KEY"] = config.api_key
+        elif config.provider == LLMProvider.MISTRAL:
+            os.environ["MISTRAL_API_KEY"] = config.api_key
         elif config.provider == LLMProvider.CURSOR:
             os.environ["CURSOR_API_KEY"] = config.api_key
 
@@ -184,6 +214,8 @@ def llm_complete(
         LLMProvider.OPENAI,
         LLMProvider.GEMINI,
         LLMProvider.OPENROUTER,
+        LLMProvider.GROQ,
+        LLMProvider.DEEPSEEK,
     ):
         kwargs["response_format"] = {"type": "json_object"}
 

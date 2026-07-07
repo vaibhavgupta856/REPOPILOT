@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 
 class RepositorySource(str, Enum):
     GITHUB = "github"
+    WORKSPACE = "workspace"
 
 
 class RepositoryMap(BaseModel):
@@ -57,6 +58,10 @@ class RepositorySummary(BaseModel):
 
 class ScanRequest(BaseModel):
     github_url: str
+
+
+class CreateWorkspaceRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=64)
 
 
 class ScanResponse(BaseModel):

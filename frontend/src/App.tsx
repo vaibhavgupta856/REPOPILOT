@@ -7,6 +7,7 @@ import { Logo } from "./components/Logo";
 import { SplitPane } from "./components/SplitPane";
 import {
   clearAuthToken,
+  createWorkspace,
   downloadRepoZip,
   getAuthToken,
   getCurrentUser,
@@ -34,6 +35,8 @@ export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [githubUrl, setGithubUrl] = useState("");
+  const [workspaceName, setWorkspaceName] = useState("");
+  const [openMode, setOpenMode] = useState<"clone" | "workspace">("clone");
   const [scanning, setScanning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [repo, setRepo] = useState<RepositorySummary | null>(null);
@@ -76,7 +79,7 @@ export default function App() {
     setHistory([]);
   }
 
-  async function handleScan(e: React.FormEvent) {
+  async function handleOpenProject(e: React.FormEvent) {
     e.preventDefault();
     setScanning(true);
     setError(null);
@@ -87,13 +90,16 @@ export default function App() {
           "Backend is not running. Start it: cd backend && uvicorn app.main:app --reload --port 8000",
         );
       }
-      const result = await scanRepository(githubUrl);
+      const result =
+        openMode === "clone"
+          ? await scanRepository(githubUrl)
+          : await createWorkspace(workspaceName);
       setRepo(result.summary);
       setHistory((prev) => [result.summary, ...prev.filter((s) => s.id !== result.summary.id)]);
       setShowOpenBar(false);
       setEditorRefresh((k) => k + 1);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Scan failed");
+      setError(err instanceof Error ? err.message : "Failed to open project");
     } finally {
       setScanning(false);
     }
@@ -198,31 +204,88 @@ export default function App() {
 
       {showOpenBar && (
         <div className="forge-glass relative z-10 shrink-0 border-b border-white/5 px-3 py-4 sm:px-5 sm:py-5">
-          <form onSubmit={handleScan} className="mx-auto flex max-w-2xl flex-col gap-3">
-            <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">
-              GitHub repository URL
-            </label>
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <input
-                type="url"
-                placeholder="https://github.com/owner/repo"
-                value={githubUrl}
-                onChange={(e) => setGithubUrl(e.target.value)}
-                className="forge-input min-w-0 flex-1 rounded-xl px-4 py-2.5 text-sm"
-                required
-              />
+          <form onSubmit={handleOpenProject} className="mx-auto flex max-w-2xl flex-col gap-3">
+            <div className="flex gap-2">
               <button
-                type="submit"
-                disabled={scanning}
-                className="forge-btn-primary flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm"
+                type="button"
+                onClick={() => setOpenMode("clone")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                  openMode === "clone"
+                    ? "bg-orange-500/20 text-orange-300"
+                    : "text-zinc-500 hover:text-zinc-300"
+                }`}
               >
-                {scanning && <div className="forge-spinner !h-4 !w-4 !border-black/20 !border-t-black" />}
-                {scanning ? "Cloning…" : "Open"}
+                Clone repository
+              </button>
+              <button
+                type="button"
+                onClick={() => setOpenMode("workspace")}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                  openMode === "workspace"
+                    ? "bg-orange-500/20 text-orange-300"
+                    : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                New workspace
               </button>
             </div>
-            {error && (
-              <p className="text-xs text-red-400">{error}</p>
+
+            {openMode === "clone" ? (
+              <>
+                <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  GitHub repository URL
+                </label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="url"
+                    placeholder="https://github.com/owner/repo"
+                    value={githubUrl}
+                    onChange={(e) => setGithubUrl(e.target.value)}
+                    className="forge-input min-w-0 flex-1 rounded-xl px-4 py-2.5 text-sm"
+                    required
+                  />
+                  <button
+                    type="submit"
+                    disabled={scanning}
+                    className="forge-btn-primary flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm"
+                  >
+                    {scanning && (
+                      <div className="forge-spinner !h-4 !w-4 !border-black/20 !border-t-black" />
+                    )}
+                    {scanning ? "Cloning…" : "Clone & open"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">
+                  Workspace name
+                </label>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <input
+                    type="text"
+                    placeholder="my-project"
+                    value={workspaceName}
+                    onChange={(e) => setWorkspaceName(e.target.value)}
+                    className="forge-input min-w-0 flex-1 rounded-xl px-4 py-2.5 text-sm"
+                    required
+                    maxLength={64}
+                  />
+                  <button
+                    type="submit"
+                    disabled={scanning}
+                    className="forge-btn-primary flex shrink-0 items-center gap-2 rounded-xl px-5 py-2.5 text-sm"
+                  >
+                    {scanning && (
+                      <div className="forge-spinner !h-4 !w-4 !border-black/20 !border-t-black" />
+                    )}
+                    {scanning ? "Creating…" : "Create & open"}
+                  </button>
+                </div>
+              </>
             )}
+
+            {error && <p className="text-xs text-red-400">{error}</p>}
           </form>
           {history.length > 0 && (
             <div className="mx-auto mt-4 max-w-2xl">
@@ -273,8 +336,8 @@ export default function App() {
               Ship code with an AI engineer
             </h2>
             <p className="text-sm leading-relaxed text-zinc-500">
-              Clone a repo, edit in the IDE, and let the agent modify the same files.
-              Agent changes glow{" "}
+              Clone a GitHub repo or start a blank workspace, edit in the IDE, and let the agent
+              modify the same files. Agent changes glow{" "}
               <span className="font-medium text-emerald-400">green</span> — accept what you
               want to keep.
             </p>

@@ -1,6 +1,7 @@
 """Orchestrates repository cloning, scanning, and summary persistence."""
 
 import json
+import re
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -19,6 +20,7 @@ from app.services.architecture_summary import generate_architecture_summary
 from app.services.dependency_graph import build_dependency_graph
 from app.services.framework_detector import detect_frameworks
 from app.services.language_detector import detect_languages, primary_language, should_skip
+from app.services.repo_workspace import repo_root_dir
 
 
 def _count_files_and_lines(root: Path) -> tuple[int, int]:
@@ -65,9 +67,24 @@ def record_to_summary(record: RepositoryRecord) -> RepositorySummary:
     return RepositorySummary.model_validate(data)
 
 
-def scan_repository(db: Session, user_id: str, request: ScanRequest) -> ScanResponse:
-    repo_id = uuid.uuid4().hex[:12]
-    root, name, source = _resolve_repo_path(request, user_id, repo_id)
+def _sanitize_workspace_name(name: str) -> str:
+    text = name.strip()
+    if not text:
+        raise ValueError("Workspace name is required")
+    safe = re.sub(r"[^\w\- ]", "", text, flags=re.UNICODE).strip().replace(" ", "-")
+    if not safe:
+        raise ValueError("Workspace name must contain letters or numbers")
+    return safe[:64]
+
+
+def _persist_repository(
+    db: Session,
+    user_id: str,
+    repo_id: str,
+    root: Path,
+    name: str,
+    source: RepositorySource,
+) -> ScanResponse:
     repo_map = _build_repository_map(root)
     architecture = generate_architecture_summary(root, repo_map)
     dependency_graph = build_dependency_graph(root)
@@ -100,6 +117,26 @@ def scan_repository(db: Session, user_id: str, request: ScanRequest) -> ScanResp
     db.refresh(record)
 
     return ScanResponse(summary=summary, summary_path=f"db://repositories/{repo_id}")
+
+
+def create_workspace(db: Session, user_id: str, name: str) -> ScanResponse:
+    repo_id = uuid.uuid4().hex[:12]
+    clean_name = _sanitize_workspace_name(name)
+    dest = repo_root_dir(user_id, repo_id)
+    dest.mkdir(parents=True, exist_ok=True)
+    readme = dest / "README.md"
+    if not readme.exists():
+        readme.write_text(
+            f"# {clean_name}\n\nBlank workspace created with RepoPilot.\n",
+            encoding="utf-8",
+        )
+    return _persist_repository(db, user_id, repo_id, dest, clean_name, RepositorySource.WORKSPACE)
+
+
+def scan_repository(db: Session, user_id: str, request: ScanRequest) -> ScanResponse:
+    repo_id = uuid.uuid4().hex[:12]
+    root, name, source = _resolve_repo_path(request, user_id, repo_id)
+    return _persist_repository(db, user_id, repo_id, root, name, source)
 
 
 def load_summary(db: Session, user_id: str, repo_id: str) -> RepositorySummary | None:

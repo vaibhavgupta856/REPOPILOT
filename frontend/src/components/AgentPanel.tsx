@@ -1,11 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   runTask,
   type LLMProvider,
   type RepositorySummary,
   type TaskRun,
 } from "../lib/api";
-import { detectProviderFromKey, providerLabel } from "../lib/detectApiKey";
+import { detectProviderFromKey, defaultModelHint, providerLabel } from "../lib/detectApiKey";
 
 interface AgentPanelProps {
   repo: RepositorySummary;
@@ -17,10 +17,14 @@ const REPO_GITHUB_URL = "https://github.com/vaibhavgupta856/REPOPILOT";
 const ADVANCED_PROVIDERS: { id: LLMProvider; label: string }[] = [
   { id: "auto", label: "Auto-detect" },
   { id: "openrouter", label: "OpenRouter" },
-  { id: "cursor", label: "Cursor" },
+  { id: "groq", label: "Groq" },
   { id: "openai", label: "OpenAI" },
   { id: "anthropic", label: "Anthropic" },
   { id: "gemini", label: "Gemini" },
+  { id: "deepseek", label: "DeepSeek" },
+  { id: "mistral", label: "Mistral" },
+  { id: "cursor", label: "Cursor" },
+  { id: "custom", label: "Other (LiteLLM)" },
   { id: "ollama", label: "Ollama" },
 ];
 
@@ -46,6 +50,12 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
   const [lastResult, setLastResult] = useState<TaskRun | null>(null);
 
   const detectedProvider = useMemo(() => detectProviderFromKey(apiKey), [apiKey]);
+
+  useEffect(() => {
+    if (!useOllama && apiKey.trim().length >= 8 && !detectedProvider) {
+      setShowAdvanced(true);
+    }
+  }, [apiKey, detectedProvider, useOllama]);
   const cursorBlockedOnWindows =
     !useOllama && (detectedProvider === "cursor" || providerOverride === "cursor") && isWindowsClient();
   const effectiveProvider: LLMProvider = useOllama
@@ -53,6 +63,17 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
     : showAdvanced && providerOverride !== "auto"
       ? providerOverride
       : detectedProvider ?? "auto";
+  const hasLiteLLMModel = model.trim().includes("/");
+  const needsProviderPick =
+    !useOllama &&
+    Boolean(apiKey.trim()) &&
+    !detectedProvider &&
+    effectiveProvider === "auto" &&
+    !hasLiteLLMModel;
+  const needsCustomModel = effectiveProvider === "custom" && !model.trim();
+  const modelHint = defaultModelHint(
+    effectiveProvider === "auto" ? (detectedProvider ?? "openrouter") : effectiveProvider,
+  );
 
   const ollamaUnavailableOnHost = useOllama && !isLocalDeployment();
 
@@ -74,10 +95,16 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
       setError("Paste an API key, or switch to local Ollama.");
       return;
     }
-    if (!useOllama && effectiveProvider === "auto" && !detectedProvider) {
+    if (needsProviderPick) {
       setError(
-        "Could not detect provider from this key. Open Advanced and pick a provider.",
+        "Could not auto-detect this key. Open Advanced and pick your provider (e.g. Groq), or enter a model like groq/llama-3.1-8b-instant.",
       );
+      setShowAdvanced(true);
+      return;
+    }
+    if (needsCustomModel) {
+      setError("Custom provider needs a model like groq/llama-3.1-8b-instant.");
+      setShowAdvanced(true);
       return;
     }
 
@@ -97,6 +124,9 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
       });
       setLastResult(taskRun);
       onTaskComplete(taskRun);
+      if (taskRun.status === "failed" && taskRun.error) {
+        setError(taskRun.error);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Task failed");
     } finally {
@@ -117,7 +147,7 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
           <h2 className="text-sm font-semibold text-white">Agent</h2>
         </div>
         <p className="mt-1 text-[11px] text-zinc-500">
-          Paste one API key — we detect the provider automatically
+          Paste any cloud API key — Groq, OpenRouter, OpenAI, and more
         </p>
       </div>
 
@@ -138,7 +168,7 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
             </label>
             <input
               type="password"
-              placeholder="Paste key — OpenRouter (sk-or-v1-…), OpenAI, Anthropic, Gemini"
+              placeholder="Paste key — Groq (gsk_…), OpenRouter (sk-or-v1-…), OpenAI, etc."
               value={apiKey}
               onChange={(e) => setApiKey(e.target.value)}
               className="forge-input w-full rounded-xl px-3 py-2.5 text-xs text-zinc-200"
@@ -146,8 +176,23 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
             {apiKey.trim() && detectedProvider && !cursorBlockedOnWindows && (
               <p className="mt-2 text-[11px] text-emerald-400/90">
                 Detected: <span className="font-medium">{providerLabel(detectedProvider)}</span>
-                {detectedProvider === "openrouter" && " · cohere/north-mini-code:free"}
-                {detectedProvider === "cursor" && " · composer-2.5 by default"}
+                {modelHint && (
+                  <>
+                    {" "}
+                    · <span className="text-zinc-500">{modelHint}</span>
+                  </>
+                )}
+              </p>
+            )}
+            {needsProviderPick && (
+              <p className="mt-2 text-[11px] text-amber-300/90">
+                Unknown key format — open Advanced and pick your provider, or enter a model like{" "}
+                <code className="text-amber-100">groq/llama-3.1-8b-instant</code> below.
+              </p>
+            )}
+            {apiKey.trim() && !detectedProvider && hasLiteLLMModel && (
+              <p className="mt-2 text-[11px] text-emerald-400/90">
+                Using custom route: <span className="font-medium">{model.trim()}</span>
               </p>
             )}
             {cursorBlockedOnWindows && (
@@ -263,11 +308,23 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
             </div>
             <input
               type="text"
-              placeholder="Model override (optional)"
+              placeholder={
+                effectiveProvider === "custom"
+                  ? "provider/model — e.g. groq/llama-3.1-8b-instant"
+                  : modelHint
+                    ? `Model override (default: ${modelHint})`
+                    : "Model override (optional)"
+              }
               value={model}
               onChange={(e) => setModel(e.target.value)}
               className="forge-input w-full rounded-lg px-3 py-2 text-xs text-zinc-200"
             />
+            {effectiveProvider === "custom" && (
+              <p className="text-[10px] text-zinc-500">
+                Works with any LiteLLM-supported provider. Use{" "}
+                <code className="text-zinc-400">provider/model</code> format.
+              </p>
+            )}
           </div>
         )}
 
@@ -283,7 +340,13 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
 
         <button
           type="submit"
-          disabled={loading || !task.trim() || ollamaUnavailableOnHost || cursorBlockedOnWindows}
+          disabled={
+            loading ||
+            !task.trim() ||
+            ollamaUnavailableOnHost ||
+            cursorBlockedOnWindows ||
+            needsCustomModel
+          }
           className={`forge-btn-primary flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm ${loading ? "forge-agent-working" : ""}`}
         >
           {loading && <div className="forge-spinner !h-4 !w-4 !border-black/20 !border-t-black" />}

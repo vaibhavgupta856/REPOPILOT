@@ -7,8 +7,12 @@ class LLMProvider(str, Enum):
     ANTHROPIC = "anthropic"
     GEMINI = "gemini"
     OPENROUTER = "openrouter"
+    GROQ = "groq"
+    DEEPSEEK = "deepseek"
+    MISTRAL = "mistral"
     CURSOR = "cursor"
     OLLAMA = "ollama"
+    CUSTOM = "custom"
 
 
 DEFAULT_MODELS: dict[LLMProvider, str] = {
@@ -16,6 +20,10 @@ DEFAULT_MODELS: dict[LLMProvider, str] = {
     LLMProvider.ANTHROPIC: "claude-3-5-haiku-20241022",
     LLMProvider.GEMINI: "gemini-2.0-flash",
     LLMProvider.OPENROUTER: "cohere/north-mini-code:free",
+    LLMProvider.GROQ: "llama-3.1-8b-instant",
+    LLMProvider.DEEPSEEK: "deepseek-chat",
+    LLMProvider.MISTRAL: "mistral-small-latest",
     LLMProvider.CURSOR: "composer-2.5",
     LLMProvider.OLLAMA: "llama3.2",
+    LLMProvider.CUSTOM: "groq/llama-3.1-8b-instant",
 }
