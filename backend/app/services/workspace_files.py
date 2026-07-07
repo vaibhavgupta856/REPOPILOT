@@ -66,6 +66,17 @@ def list_workspace_files(workspace: Path) -> list[str]:
     return sorted(results)
 
 
+def list_workspace_dirs(workspace: Path) -> list[str]:
+    results: list[str] = []
+    for dir_path in workspace.rglob("*"):
+        if not dir_path.is_dir():
+            continue
+        if any(part in SKIP_DIRS for part in dir_path.parts):
+            continue
+        results.append(str(dir_path.relative_to(workspace)).replace("\\", "/"))
+    return sorted(results)
+
+
 def read_workspace_file(workspace: Path, rel_path: str) -> str:
     rel = normalize_path(rel_path)
     target = workspace / rel
@@ -94,10 +105,14 @@ def build_file_list_for_repo(
             if f.is_file():
                 orig_paths.add(str(f.relative_to(orig_root)).replace("\\", "/"))
 
-    paths = sorted(set(list_workspace_files(workspace)) | set(change_map.keys()) | orig_paths)
+    file_paths = set(list_workspace_files(workspace))
+    dir_paths = set(list_workspace_dirs(workspace))
+
+    paths = sorted(set(file_paths) | dir_paths | set(change_map.keys()) | orig_paths)
     return [
         WorkspaceFileInfo(
             path=p,
+            is_dir=p in dir_paths and p not in file_paths and p not in change_map,
             action=change_map.get(p),
             has_agent_change=p in change_map or p in orig_paths,
         )

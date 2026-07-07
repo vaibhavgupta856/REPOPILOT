@@ -1,0 +1,19 @@
+# Deploy backend API on Render (free tier): https://render.com
+# Connect this repo → New Blueprint → select render.yaml
+services:
+  - type: web
+    name: repopilot-api
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://repopilot.vercel.app
+      - key: DATABASE_URL
+        value: sqlite:///./repopilot.db

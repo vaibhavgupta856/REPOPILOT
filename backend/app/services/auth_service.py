@@ -67,3 +67,17 @@ def authenticate_user(db: Session, email: str, password: str) -> User | None:
     if not verify_password(password, user.password_hash):
         return None
     return user
+
+
+def create_guest_user(db: Session) -> User:
+    guest_tag = uuid.uuid4().hex[:6]
+    user = User(
+        id=uuid.uuid4().hex[:16],
+        email=None,
+        password_hash=None,
+        name=f"Guest-{guest_tag}",
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    return user

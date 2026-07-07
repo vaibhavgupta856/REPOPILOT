@@ -13,11 +13,12 @@ router = APIRouter(prefix="/tasks", tags=["tasks"])
 
 
 @router.post("/run", response_model=TaskResponse)
-async def execute_task(
+def execute_task(
     request: TaskRequest,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> TaskResponse:
+    """Sync route — FastAPI runs blocking LLM work in a thread pool (fixes WinError 10038 on Windows)."""
     if load_summary(db, user.id, request.repo_id) is None:
         raise HTTPException(status_code=404, detail="Repository not found")
     try:

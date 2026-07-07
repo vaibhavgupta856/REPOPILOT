@@ -16,6 +16,7 @@ class AcceptAllRequest(BaseModel):
 
 class WorkspaceFileInfo(BaseModel):
     path: str
+    is_dir: bool = False
     action: str | None = None
     has_agent_change: bool = False
 

@@ -77,6 +77,12 @@ export async function loginUser(payload: {
   return res.json();
 }
 
+export async function guestLogin(): Promise<TokenResponse> {
+  const res = await apiFetch("/auth/guest", { method: "POST" });
+  if (!res.ok) throw new Error(await parseError(res, "Guest login failed"));
+  return res.json();
+}
+
 export async function getCurrentUser(): Promise<AuthUser> {
   const res = await apiFetch("/auth/me");
   if (!res.ok) throw new Error("Not authenticated");
@@ -84,7 +90,14 @@ export async function getCurrentUser(): Promise<AuthUser> {
 }
 
 export type RepositorySource = "github";
-export type LLMProvider = "openai" | "anthropic" | "gemini" | "openrouter" | "ollama";
+export type LLMProvider =
+  | "auto"
+  | "openai"
+  | "anthropic"
+  | "gemini"
+  | "openrouter"
+  | "cursor"
+  | "ollama";
 export type TaskStatus =
   | "pending"
   | "planning"
@@ -259,6 +272,7 @@ export async function getTask(taskId: string): Promise<TaskRun> {
 
 export interface WorkspaceFileInfo {
   path: string;
+  is_dir: boolean;
   action: string | null;
   has_agent_change: boolean;
 }

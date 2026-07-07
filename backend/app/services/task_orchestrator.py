@@ -90,6 +90,7 @@ def run_task(db: Session, user_id: str, request: TaskRequest) -> TaskRun:
         raise ValueError(f"Repository not found: {request.repo_id}")
 
     workspace = get_repo_root(summary.path)
+    llm = request.llm.model_copy(update={"workspace_path": str(workspace)})
     task_id = uuid.uuid4().hex[:12]
     task = TaskRun(
         id=task_id,
@@ -101,13 +102,13 @@ def run_task(db: Session, user_id: str, request: TaskRequest) -> TaskRun:
     save_task(user_id, task)
 
     try:
-        plan = create_plan(request.task, summary, workspace, request.llm)
+        plan = create_plan(request.task, summary, workspace, llm)
         task.plan = plan
         task.status = TaskStatus.CODING
         save_task(user_id, task)
 
         changes, code_summary = generate_changes(
-            request.task, plan, summary, workspace, request.llm
+            request.task, plan, summary, workspace, llm
         )
         task.changes = changes
         task.metadata["code_summary"] = code_summary
@@ -127,7 +128,7 @@ def run_task(db: Session, user_id: str, request: TaskRequest) -> TaskRun:
                 plan,
                 summary,
                 workspace,
-                request.llm,
+                llm,
                 changes,
                 max_iterations=request.max_healing_iterations,
             )

@@ -17,6 +17,8 @@ def format_llm_error(exc: Exception) -> str:
     if "AuthenticationError" in type(exc).__name__ or "401" in msg or "invalid api key" in msg.lower():
         if "openrouter" in msg.lower():
             return "Invalid OpenRouter API key. Create one at https://openrouter.ai/keys"
+        if "cursor" in msg.lower() or "crsr_" in msg.lower():
+            return "Invalid Cursor API key. Create one at https://cursor.com/dashboard/integrations"
         return "Invalid API key. Check your key in the provider dashboard."
 
     if "credit balance is too low" in msg.lower() or "purchase credits" in msg.lower():
@@ -32,6 +34,13 @@ def format_llm_error(exc: Exception) -> str:
         return (
             "Cannot reach Ollama. Run `ollama serve` and `ollama pull llama3.2`, "
             "or pick a cloud provider."
+        )
+
+    if "10038" in msg or "not a socket" in msg.lower():
+        return (
+            "Windows socket error while calling the LLM. Restart the backend "
+            "(try without --reload), then retry. If it keeps happening, switch provider "
+            "or update: pip install -U litellm httpx"
         )
 
     if "valid JSON" in msg or "empty response" in msg:

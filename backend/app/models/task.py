@@ -4,7 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from app.services.llm import LLMConfig, LLMProvider
+from app.services.llm import LLMConfig
+from app.services.llm_types import LLMProvider
 
 
 class TaskStatus(str, Enum):
@@ -83,7 +84,7 @@ class TaskRequest(BaseModel):
     repo_id: str
     task: str
     llm: LLMConfig = Field(
-        default_factory=lambda: LLMConfig(provider=LLMProvider.OLLAMA)
+        default_factory=lambda: LLMConfig(provider=LLMProvider.AUTO)
     )
     max_healing_iterations: int = 3
     run_tests: bool = True

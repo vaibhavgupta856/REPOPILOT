@@ -146,13 +146,13 @@ export default function App() {
   }
 
   return (
-    <div className="forge-bg relative flex h-screen flex-col text-zinc-200">
-      <header className="forge-glass-strong relative z-10 flex shrink-0 items-center justify-between border-b border-white/5 px-5 py-3">
-        <div className="flex items-center gap-4">
+    <div className="forge-bg relative flex min-h-screen flex-col text-zinc-200">
+      <header className="forge-glass-strong relative z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/5 px-3 py-3 sm:px-5">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <Logo size="sm" />
           {repo && (
-            <div className="flex items-center gap-2 border-l border-white/10 pl-4">
-              <span className="rounded-md bg-orange-500/15 px-2 py-0.5 text-[11px] font-medium text-orange-300">
+            <div className="flex min-w-0 items-center gap-2 border-l border-white/10 pl-3 sm:pl-4">
+              <span className="max-w-36 truncate rounded-md bg-orange-500/15 px-2 py-0.5 text-[11px] font-medium text-orange-300 sm:max-w-none">
                 {repo.name}
               </span>
               {repo.map.language && (
@@ -163,7 +163,7 @@ export default function App() {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
           <span className="mr-2 hidden text-xs text-zinc-500 sm:inline">
             {user.name || user.email}
           </span>
@@ -195,12 +195,12 @@ export default function App() {
       </header>
 
       {showOpenBar && (
-        <div className="forge-glass relative z-10 shrink-0 border-b border-white/5 px-5 py-5">
+        <div className="forge-glass relative z-10 shrink-0 border-b border-white/5 px-3 py-4 sm:px-5 sm:py-5">
           <form onSubmit={handleScan} className="mx-auto flex max-w-2xl flex-col gap-3">
             <label className="text-xs font-medium uppercase tracking-wider text-zinc-500">
               GitHub repository URL
             </label>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <input
                 type="url"
                 placeholder="https://github.com/owner/repo"
@@ -243,11 +243,11 @@ export default function App() {
       )}
 
       {repo ? (
-        <div className="relative z-0 flex min-h-0 flex-1 gap-3 p-3">
+        <div className="relative z-0 flex min-h-0 flex-1 flex-col gap-3 p-2 sm:p-3 lg:flex-row">
           <div className="min-w-0 flex-[3]">
             <ForgeIDE repoId={repo.id} refreshKey={editorRefresh} />
           </div>
-          <div className="w-80 shrink-0">
+          <div className="h-[420px] w-full shrink-0 lg:h-auto lg:w-80">
             <AgentPanel repo={repo} onTaskComplete={onTaskComplete} />
           </div>
         </div>

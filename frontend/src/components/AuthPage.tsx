@@ -1,5 +1,6 @@
 import { useState } from "react";
 import {
+  guestLogin,
   getCurrentUser,
   loginUser,
   registerUser,
@@ -45,11 +46,26 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
     }
   }
 
+  async function handleGuest() {
+    setLoading(true);
+    setError(null);
+    try {
+      const result = await guestLogin();
+      setAuthToken(result.access_token);
+      const user = await getCurrentUser();
+      onAuthenticated(user, result.access_token);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Guest login failed");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="forge-bg relative flex min-h-screen items-center justify-center overflow-hidden p-6">
       <div className="pointer-events-none absolute left-1/2 top-1/3 h-96 w-96 -translate-x-1/2 rounded-full bg-orange-500/10 blur-[100px]" />
 
-      <div className="relative w-full max-w-md">
+      <div className="relative w-full max-w-md sm:max-w-lg">
         <div className="forge-glass-strong mb-6 rounded-2xl p-8 shadow-2xl shadow-black/40">
           <div className="mb-8">
             <Logo size="md" />
@@ -106,6 +122,14 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
             >
               {loading && <div className="forge-spinner !h-4 !w-4 !border-black/20 !border-t-black" />}
               {loading ? "Please wait…" : mode === "login" ? "Sign in" : "Create account"}
+            </button>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={handleGuest}
+              className="forge-btn-ghost rounded-xl py-2.5 text-sm text-zinc-200 disabled:opacity-50"
+            >
+              Continue as Guest
             </button>
           </form>
 

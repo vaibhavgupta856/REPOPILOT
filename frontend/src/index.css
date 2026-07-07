@@ -16,8 +16,7 @@
 body {
   margin: 0;
   min-height: 100vh;
-  height: 100vh;
-  overflow: hidden;
+  overflow-x: hidden;
   background: var(--forge-bg);
   color: #e4e4e7;
   font-family: "DM Sans", system-ui, -apple-system, sans-serif;
@@ -165,4 +164,77 @@ body {
 
 .forge-agent-working {
   animation: forge-pulse 1.5s ease-in-out infinite;
+}
+
+/* Terminal */
+.forge-terminal {
+  position: relative;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(16, 185, 129, 0.08), transparent 55%),
+    radial-gradient(ellipse 60% 40% at 100% 100%, rgba(249, 115, 22, 0.06), transparent 50%),
+    linear-gradient(180deg, #0c0c12 0%, #08080d 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.forge-terminal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(180deg, black 0%, transparent 100%);
+  opacity: 0.6;
+}
+
+.forge-terminal::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.12) 2px,
+    rgba(0, 0, 0, 0.12) 4px
+  );
+  opacity: 0.25;
+}
+
+.forge-terminal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(16, 185, 129, 0.35) transparent;
+}
+
+.forge-terminal-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.forge-terminal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(16, 185, 129, 0.3);
+  border-radius: 999px;
+}
+
+.forge-terminal-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.5);
+}
+
+.forge-terminal-running {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: rgba(52, 211, 153, 0.8);
+}
+
+.forge-terminal-running::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #34d399;
+  box-shadow: 0 0 10px rgba(52, 211, 153, 0.8);
+  animation: forge-pulse 1s ease-in-out infinite;
 }
