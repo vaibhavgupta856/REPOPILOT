@@ -33,6 +33,9 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
   if (init.headers) {
     Object.assign(headers, init.headers);
   }
+  if (API_BASE.includes("loca.lt")) {
+    headers["Bypass-Tunnel-Reminder"] = "true";
+  }
   try {
     return await fetch(`${API_BASE}${path}`, { ...init, headers });
   } catch {
@@ -49,6 +52,9 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
 }
 
 async function parseError(res: Response, fallback: string): Promise<string> {
+  if (res.status === 511) {
+    return "Tunnel access blocked (511). Restart the backend tunnel or deploy the API on Render.";
+  }
   const err = await res.json().catch(() => ({ detail: res.statusText }));
   if (typeof err.detail === "string") return err.detail;
   if (Array.isArray(err.detail)) {
