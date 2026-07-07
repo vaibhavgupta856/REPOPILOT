@@ -319,15 +319,15 @@ Repo: [github.com/vaibhavgupta856/REPOPILOT](https://github.com/vaibhavgupta856/
 ### 3. Deploy frontend (Vercel) — project name **RepoPilot**
 
 1. Go to [vercel.com](https://vercel.com) → **Add New Project** → import `vaibhavgupta856/REPOPILOT`
-2. Vercel auto-detects `vercel.json` (builds `frontend/`)
-3. **Project name:** set to `RepoPilot` → live URL: **`https://repopilot.vercel.app`**
+2. Set **Root Directory** to `frontend` (important — keeps Vercel from picking up the Python backend)
+3. **Project name:** `RepoPilot` → live URL: **`https://repopilot.vercel.app`**
 4. **Environment variable:** `VITE_API_URL` = `https://YOUR-RENDER-URL.onrender.com/api`
 5. Deploy
 
-CLI alternative:
+CLI alternative (from repo root):
 
 ```bash
-npx vercel --prod --name repopilot
+npx vercel frontend --prod
 ```
 
 Set `VITE_API_URL` in the Vercel dashboard under **Settings → Environment Variables**.
