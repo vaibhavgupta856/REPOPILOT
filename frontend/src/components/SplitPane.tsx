@@ -72,7 +72,7 @@ export function SplitPane({
     return (
       <div
         ref={containerRef}
-        className={`flex min-h-0 min-w-0 ${isH ? "flex-row" : "flex-col"} ${className}`}
+        className={`flex h-full min-h-0 min-w-0 ${isH ? "flex-row" : "flex-col"} ${className}`}
       >
         <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{first}</div>
         {collapsedSecond}
@@ -83,11 +83,11 @@ export function SplitPane({
   return (
     <div
       ref={containerRef}
-      className={`flex min-h-0 min-w-0 ${isH ? "flex-row" : "flex-col"} ${className}`}
+      className={`flex h-full min-h-0 min-w-0 ${isH ? "flex-row" : "flex-col"} ${className}`}
     >
       <div
         className="min-h-0 min-w-0 overflow-hidden"
-        style={isH ? { width: `${ratio * 100}%` } : { height: `${ratio * 100}%` }}
+        style={isH ? { width: `${ratio * 100}%`, height: "100%" } : { height: `${ratio * 100}%`, width: "100%" }}
       >
         {first}
       </div>
@@ -102,7 +102,7 @@ export function SplitPane({
             : "h-[3px] cursor-row-resize hover:h-[4px]"
         }`}
       />
-      <div className="min-h-0 min-w-0 flex-1 overflow-hidden">{second}</div>
+      <div className="min-h-0 min-w-0 flex-1 overflow-hidden h-full">{second}</div>
     </div>
   );
 }

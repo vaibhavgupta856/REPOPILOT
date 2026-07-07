@@ -62,7 +62,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
   }
 
   return (
-    <div className="forge-bg relative flex min-h-screen items-center justify-center overflow-hidden p-6">
+    <div className="forge-bg relative flex h-full min-h-0 items-center justify-center overflow-hidden p-6">
       <div className="pointer-events-none absolute left-1/2 top-1/3 h-96 w-96 -translate-x-1/2 rounded-full bg-orange-500/10 blur-[100px]" />
 
       <div className="relative w-full max-w-md sm:max-w-lg">

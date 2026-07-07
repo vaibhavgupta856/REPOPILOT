@@ -148,7 +148,7 @@ export default function App() {
   }
 
   return (
-    <div className="forge-bg relative flex min-h-screen flex-col text-zinc-200">
+    <div className="forge-bg relative flex h-full flex-col overflow-hidden text-zinc-200">
       <header className="forge-glass-strong relative z-10 flex shrink-0 flex-wrap items-center justify-between gap-3 border-b border-white/5 px-3 py-3 sm:px-5">
         <div className="flex min-w-0 items-center gap-3 sm:gap-4">
           <Logo size="sm" />
@@ -245,15 +245,23 @@ export default function App() {
       )}
 
       {repo ? (
-        <div className="relative z-0 min-h-0 flex-1 p-2 sm:p-3">
+        <div className="relative z-0 flex min-h-0 flex-1 overflow-hidden p-2 sm:p-3">
           <SplitPane
             orientation="horizontal"
             initialRatio={0.74}
             minFirst={400}
             minSecond={280}
-            className="h-full min-h-[520px]"
-            first={<ForgeIDE repoId={repo.id} refreshKey={editorRefresh} />}
-            second={<AgentPanel repo={repo} onTaskComplete={onTaskComplete} />}
+            className="h-full w-full"
+            first={
+              <div className="h-full min-h-0">
+                <ForgeIDE repoId={repo.id} refreshKey={editorRefresh} />
+              </div>
+            }
+            second={
+              <div className="h-full min-h-0">
+                <AgentPanel repo={repo} onTaskComplete={onTaskComplete} />
+              </div>
+            }
           />
         </div>
       ) : (
