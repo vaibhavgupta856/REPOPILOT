@@ -42,7 +42,8 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
       );
     }
     throw new Error(
-      `Cannot reach the API at ${API_BASE}. Check that the backend is running and CORS is configured.`,
+      `Cannot reach the API at ${API_BASE}. The backend may be offline or misconfigured. ` +
+        "For the live demo, deploy the API on Render and set VITE_API_URL in Vercel.",
     );
   }
 }
