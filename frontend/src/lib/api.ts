@@ -2,6 +2,9 @@ import { resolveApiBase, isHostedFrontend } from "./config";
 
 const API_BASE = resolveApiBase();
 const TOKEN_KEY = "repopilot_auth_token";
+const HOSTED_RETRY_ATTEMPTS = 4;
+const HOSTED_RETRY_DELAY_MS = 3500;
+const FETCH_TIMEOUT_MS = 50_000;
 
 export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -24,6 +27,36 @@ function authHeaders(extra: Record<string, string> = {}): Record<string, string>
   return headers;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function fetchWithTimeout(
+  url: string,
+  init: RequestInit,
+  timeoutMs: number,
+): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function apiUnreachableError(): Error {
+  if (isHostedFrontend() && API_BASE.includes("localhost")) {
+    return new Error(
+      "Backend API is not configured for this deployment. Set VITE_API_URL in Vercel and deploy the API on Render.",
+    );
+  }
+  return new Error(
+    `Cannot reach the API at ${API_BASE}. The backend may be waking up (Render free tier can take up to a minute). ` +
+      "Wait a moment and try again.",
+  );
+}
+
 async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const headers = authHeaders(
     init.body && !(init.headers as Record<string, string>)?.["Content-Type"]
@@ -36,19 +69,22 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
   if (API_BASE.includes("loca.lt")) {
     headers["Bypass-Tunnel-Reminder"] = "true";
   }
-  try {
-    return await fetch(`${API_BASE}${path}`, { ...init, headers });
-  } catch {
-    if (isHostedFrontend() && API_BASE.includes("localhost")) {
-      throw new Error(
-        "Backend API is not configured for this deployment. Set VITE_API_URL in Vercel and deploy the API on Render.",
-      );
+
+  const url = `${API_BASE}${path}`;
+  const attempts = isHostedFrontend() ? HOSTED_RETRY_ATTEMPTS : 1;
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      return await fetchWithTimeout(url, { ...init, headers }, FETCH_TIMEOUT_MS);
+    } catch {
+      if (attempt < attempts - 1) {
+        await sleep(HOSTED_RETRY_DELAY_MS * (attempt + 1));
+        continue;
+      }
     }
-    throw new Error(
-      `Cannot reach the API at ${API_BASE}. The backend may be starting up (Render free tier cold starts take ~30s) or offline. ` +
-        "Try again in a moment.",
-    );
   }
+
+  throw apiUnreachableError();
 }
 
 async function parseError(res: Response, fallback: string): Promise<string> {
@@ -286,6 +322,12 @@ export async function createDemoWorkspace(): Promise<ScanResponse> {
 export async function listRepositories(): Promise<RepositorySummary[]> {
   const res = await apiFetch("/repositories");
   if (!res.ok) throw new Error("Failed to load repositories");
+  return res.json();
+}
+
+export async function getRepository(repoId: string): Promise<RepositorySummary> {
+  const res = await apiFetch(`/repositories/${repoId}`);
+  if (!res.ok) throw new Error(await parseError(res, "Repository not found"));
   return res.json();
 }
 

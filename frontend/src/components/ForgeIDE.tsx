@@ -62,18 +62,29 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
   const [editorSettings, setEditorSettings] = useState<EditorSettings>(() => loadEditorSettings());
   const [zenMode, setZenMode] = useState(false);
   const [markdownPreview, setMarkdownPreview] = useState(false);
+  const [filesError, setFilesError] = useState<string | null>(null);
   const pendingLineRef = useRef<number | null>(null);
 
   const loadFiles = useCallback(async () => {
-    const [list, acc] = await Promise.all([listRepoFiles(repoId), getAcceptedLines(repoId)]);
-    setFiles(list.files);
-    setWorkspacePath(list.workspace_path);
-    setAccepted(acc);
-    setSelectedPath((prev) => {
-      if (prev && list.files.some((f) => f.path === prev && !f.is_dir)) return prev;
-      const changed = list.files.find((f) => f.has_agent_change && !f.is_dir);
-      return changed?.path ?? list.files.find((f) => !f.is_dir)?.path ?? null;
-    });
+    try {
+      const [list, acc] = await Promise.all([listRepoFiles(repoId), getAcceptedLines(repoId)]);
+      setFilesError(null);
+      setFiles(list.files);
+      setWorkspacePath(list.workspace_path);
+      setAccepted(acc);
+      setSelectedPath((prev) => {
+        if (prev && list.files.some((f) => f.path === prev && !f.is_dir)) return prev;
+        const changed = list.files.find((f) => f.has_agent_change && !f.is_dir);
+        return changed?.path ?? list.files.find((f) => !f.is_dir)?.path ?? null;
+      });
+    } catch (err) {
+      setFiles([]);
+      setFilesError(
+        err instanceof Error
+          ? err.message
+          : "Could not load files — the server may be waking up. Click refresh or open a new demo.",
+      );
+    }
   }, [repoId]);
 
   useEffect(() => {
@@ -380,6 +391,10 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
               onSelectFile={(p) => openFile(p)}
               onNewFile={() => handleNewFile().catch(() => {})}
               onRefresh={() => loadFiles().catch(() => {})}
+              emptyMessage={
+                filesError ??
+                "No files yet — if this is an old workspace, open a fresh demo from the top bar."
+              }
             />
           </div>
         </>

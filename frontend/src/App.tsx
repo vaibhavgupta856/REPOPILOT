@@ -12,6 +12,7 @@ import {
   downloadRepoZip,
   getAuthToken,
   getCurrentUser,
+  getRepository,
   listRepositories,
   scanRepository,
   type AuthUser,
@@ -24,12 +25,20 @@ import "./index.css";
 const API_HEALTH = resolveHealthBase();
 
 async function checkBackend(): Promise<boolean> {
-  try {
-    const res = await fetch(`${API_HEALTH}/health`, { signal: AbortSignal.timeout(3000) });
-    return res.ok;
-  } catch {
-    return false;
+  const attempts = 4;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const res = await fetch(`${API_HEALTH}/health`, {
+        signal: AbortSignal.timeout(50_000),
+      });
+      if (res.ok) return true;
+    } catch {
+      if (i < attempts - 1) {
+        await new Promise((r) => setTimeout(r, 3500 * (i + 1)));
+      }
+    }
   }
+  return false;
 }
 
 export default function App() {
@@ -142,9 +151,15 @@ export default function App() {
       if (!ok) {
         throw new Error("Backend is not running. Restart uvicorn on port 8000.");
       }
-      openRepo(summary);
+      const fresh = await getRepository(summary.id);
+      openRepo(fresh);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to open repo");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to open repo — try creating a new demo workspace.",
+      );
+      setShowOpenBar(true);
     } finally {
       setScanning(false);
     }
@@ -161,8 +176,12 @@ export default function App() {
     try {
       await downloadRepoZip(repo.id, repo.name);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Download failed");
-      setShowOpenBar(true);
+      const message = err instanceof Error ? err.message : "Download failed";
+      setError(
+        message.includes("not found") || message.includes("404")
+          ? `${message} This workspace may be from an older session — open a fresh demo workspace.`
+          : message,
+      );
     } finally {
       setDownloading(false);
     }
@@ -224,6 +243,19 @@ export default function App() {
           </button>
         </div>
       </header>
+
+      {error && repo && !showOpenBar && (
+        <div className="relative z-10 flex shrink-0 items-center justify-between gap-3 border-b border-red-500/20 bg-red-500/10 px-4 py-2 text-xs text-red-300">
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => setError(null)}
+            className="shrink-0 rounded-md px-2 py-1 text-red-200 hover:bg-red-500/20"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {showOpenBar && (
         <div className="forge-glass relative z-10 shrink-0 border-b border-white/5 px-3 py-4 sm:px-5 sm:py-5">

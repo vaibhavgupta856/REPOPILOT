@@ -71,9 +71,17 @@ interface FileTreeProps {
   onSelectFile: (path: string) => void;
   onNewFile?: () => void;
   onRefresh?: () => void;
+  emptyMessage?: string;
 }
 
-export function FileTree({ files, selectedPath, onSelectFile, onNewFile, onRefresh }: FileTreeProps) {
+export function FileTree({
+  files,
+  selectedPath,
+  onSelectFile,
+  onNewFile,
+  onRefresh,
+  emptyMessage = "No files yet",
+}: FileTreeProps) {
   const tree = useMemo(() => buildFileTree(files), [files]);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
 
@@ -169,7 +177,7 @@ export function FileTree({ files, selectedPath, onSelectFile, onNewFile, onRefre
   if (tree.length === 0) {
     return (
       <div className="px-2">
-        <p className="mb-2 text-xs text-zinc-600">No files yet</p>
+        <p className="mb-2 text-xs text-zinc-600">{emptyMessage}</p>
         {onNewFile && (
           <button
             type="button"
