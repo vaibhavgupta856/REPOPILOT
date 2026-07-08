@@ -1,0 +1,31 @@
+name: Deploy Render Backend
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "render.yaml"
+
+jobs:
+  deploy:
+    if: ${{ secrets.RENDER_API_KEY != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trigger Render deploy
+        run: |
+          SERVICE_ID=$(curl -sS \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            "https://api.render.com/v1/services?name=repopilot-api&limit=1" \
+            | python -c "import sys,json; d=json.load(sys.stdin); print(d[0]['service']['id'] if d else '')")
+          if [ -z "$SERVICE_ID" ]; then
+            echo "Render service not found. Create it once:"
+            echo "https://render.com/deploy?repo=https://github.com/vaibhavgupta856/REPOPILOT"
+            exit 1
+          fi
+          curl -sS -X POST \
+            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            "https://api.render.com/v1/services/${SERVICE_ID}/deploys"
