@@ -51,7 +51,7 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
   const [tabState, setTabState] = useState<Record<string, TabState>>({});
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [terminalOpen, setTerminalOpen] = useState(true);
+  const [terminalOpen, setTerminalOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarView, setSidebarView] = useState<SidebarView>("explorer");
   const [commandOpen, setCommandOpen] = useState(false);
@@ -399,7 +399,7 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
   );
 
   const sidebarContent = (
-    <aside className="flex h-full min-w-0 flex-col overflow-hidden border-r border-white/5 bg-[#0a0a0e]">
+    <aside className="flex h-full w-[188px] shrink-0 flex-col overflow-hidden border-r border-white/5 bg-[#0a0a0e]">
       {sidebarView === "explorer" && (
         <>
           <p className="forge-panel-title shrink-0 border-b border-white/5 px-3 py-2 text-[10px] font-semibold uppercase text-zinc-600">Explorer</p>
@@ -439,18 +439,27 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
     </aside>
   );
 
-  const sidebar = sidebarOpen ? (
+  const editorAndTerminal = (
     <SplitPane
-      orientation="horizontal"
-      initialRatio={0.28}
-      minFirst={140}
-      minSecond={200}
+      orientation="vertical"
+      initialRatio={0.82}
+      minFirst={160}
+      minSecond={72}
+      secondCollapsed={!terminalOpen}
+      collapsedSecond={collapsedTerminal}
       className="h-full"
-      first={sidebarContent}
-      second={editorPanel}
+      first={editorPanel}
+      second={terminalPanel}
     />
+  );
+
+  const workbench = sidebarOpen ? (
+    <div className="flex h-full min-h-0 min-w-0">
+      {sidebarContent}
+      <div className="min-h-0 min-w-0 flex-1">{editorAndTerminal}</div>
+    </div>
   ) : (
-    editorPanel
+    editorAndTerminal
   );
 
   const mainArea = (
@@ -463,7 +472,7 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
           onToggleSidebar={() => setSidebarOpen(false)}
         />
       )}
-      <div className="min-h-0 min-w-0 flex-1">{zenMode ? editorPanel : sidebar}</div>
+      <div className="min-h-0 min-w-0 flex-1">{zenMode ? editorPanel : workbench}</div>
     </div>
   );
 
@@ -497,21 +506,7 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
         )}
 
         <div className="min-h-0 flex-1 overflow-hidden">
-          {zenMode ? (
-            mainArea
-          ) : (
-            <SplitPane
-              orientation="vertical"
-              initialRatio={0.64}
-              minFirst={200}
-              minSecond={100}
-              secondCollapsed={!terminalOpen}
-              collapsedSecond={collapsedTerminal}
-              className="h-full"
-              first={mainArea}
-              second={terminalPanel}
-            />
-          )}
+          {mainArea}
         </div>
 
         {!zenMode && (
