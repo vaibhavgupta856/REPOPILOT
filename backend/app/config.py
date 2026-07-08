@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -10,8 +11,8 @@ class Settings(BaseSettings):
     debug: bool = False
 
     project_root: Path = Path(__file__).resolve().parents[2]
-    workspace_dir: Path = project_root / "workspace"
-    sandbox_dir: Path = project_root / "sandbox"
+    workspace_dir: Path = Path(__file__).resolve().parents[2] / "workspace"
+    sandbox_dir: Path = Path(__file__).resolve().parents[2] / "sandbox"
 
     database_url: str = "sqlite:///./repopilot.db"
 
@@ -29,5 +30,15 @@ class Settings(BaseSettings):
 
 settings = Settings()
 
+_workspace_override = os.getenv("WORKSPACE_DIR", "").strip()
+if _workspace_override:
+    settings.workspace_dir = Path(_workspace_override)
+
 settings.workspace_dir.mkdir(parents=True, exist_ok=True)
 settings.sandbox_dir.mkdir(parents=True, exist_ok=True)
+
+_db_url = settings.database_url
+if _db_url.startswith("sqlite:///"):
+    db_path = _db_url.removeprefix("sqlite:///")
+    if db_path and db_path != ":memory:":
+        Path(db_path).parent.mkdir(parents=True, exist_ok=True)

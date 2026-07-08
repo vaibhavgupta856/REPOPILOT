@@ -45,8 +45,8 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
       );
     }
     throw new Error(
-      `Cannot reach the API at ${API_BASE}. The backend may be offline or misconfigured. ` +
-        "For the live demo, deploy the API on Render and set VITE_API_URL in Vercel.",
+      `Cannot reach the API at ${API_BASE}. The backend may be starting up (Render free tier cold starts take ~30s) or offline. ` +
+        "Try again in a moment.",
     );
   }
 }
@@ -274,6 +274,12 @@ export async function createWorkspace(name: string): Promise<ScanResponse> {
     body: JSON.stringify({ name }),
   });
   if (!res.ok) throw new Error(await parseError(res, "Workspace creation failed"));
+  return res.json();
+}
+
+export async function createDemoWorkspace(): Promise<ScanResponse> {
+  const res = await apiFetch("/repositories/demo", { method: "POST" });
+  if (!res.ok) throw new Error(await parseError(res, "Demo workspace failed"));
   return res.json();
 }
 

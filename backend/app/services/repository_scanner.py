@@ -21,6 +21,7 @@ from app.services.dependency_graph import build_dependency_graph
 from app.services.framework_detector import detect_frameworks
 from app.services.language_detector import detect_languages, primary_language, should_skip
 from app.services.repo_workspace import repo_root_dir
+from app.services.demo_workspace import DEMO_WORKSPACE_NAME, copy_demo_template
 
 
 def _count_files_and_lines(root: Path) -> tuple[int, int]:
@@ -131,6 +132,15 @@ def create_workspace(db: Session, user_id: str, name: str) -> ScanResponse:
             encoding="utf-8",
         )
     return _persist_repository(db, user_id, repo_id, dest, clean_name, RepositorySource.WORKSPACE)
+
+
+def create_demo_workspace(db: Session, user_id: str) -> ScanResponse:
+    repo_id = uuid.uuid4().hex[:12]
+    dest = repo_root_dir(user_id, repo_id)
+    copy_demo_template(dest)
+    return _persist_repository(
+        db, user_id, repo_id, dest, DEMO_WORKSPACE_NAME, RepositorySource.WORKSPACE
+    )
 
 
 def scan_repository(db: Session, user_id: str, request: ScanRequest) -> ScanResponse:

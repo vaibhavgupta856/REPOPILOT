@@ -7,6 +7,7 @@ import { Logo } from "./components/Logo";
 import { SplitPane } from "./components/SplitPane";
 import {
   clearAuthToken,
+  createDemoWorkspace,
   createWorkspace,
   downloadRepoZip,
   getAuthToken,
@@ -100,6 +101,28 @@ export default function App() {
       setEditorRefresh((k) => k + 1);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to open project");
+    } finally {
+      setScanning(false);
+    }
+  }
+
+  async function handleOpenDemo() {
+    setScanning(true);
+    setError(null);
+    try {
+      const ok = await checkBackend();
+      if (!ok) {
+        throw new Error(
+          "Backend is not running. Start it: cd backend && uvicorn app.main:app --reload --port 8000",
+        );
+      }
+      const result = await createDemoWorkspace();
+      setRepo(result.summary);
+      setHistory((prev) => [result.summary, ...prev.filter((s) => s.id !== result.summary.id)]);
+      setShowOpenBar(false);
+      setEditorRefresh((k) => k + 1);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to open demo");
     } finally {
       setScanning(false);
     }
@@ -205,7 +228,7 @@ export default function App() {
       {showOpenBar && (
         <div className="forge-glass relative z-10 shrink-0 border-b border-white/5 px-3 py-4 sm:px-5 sm:py-5">
           <form onSubmit={handleOpenProject} className="mx-auto flex max-w-2xl flex-col gap-3">
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => setOpenMode("clone")}
@@ -227,6 +250,14 @@ export default function App() {
                 }`}
               >
                 New workspace
+              </button>
+              <button
+                type="button"
+                onClick={handleOpenDemo}
+                disabled={scanning}
+                className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-300 transition hover:bg-emerald-500/20 disabled:opacity-50"
+              >
+                {scanning ? "Loading demo…" : "Try demo workspace"}
               </button>
             </div>
 
@@ -352,13 +383,24 @@ export default function App() {
               </span>
             ))}
           </div>
-          <button
-            type="button"
-            onClick={() => setShowOpenBar(true)}
-            className="forge-btn-primary rounded-xl px-8 py-3 text-sm"
-          >
-            Open a repository
-          </button>
+          <div className="flex flex-wrap justify-center gap-3">
+            <button
+              type="button"
+              onClick={() => setShowOpenBar(true)}
+              className="forge-btn-primary rounded-xl px-8 py-3 text-sm"
+            >
+              Open a repository
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenDemo}
+              disabled={scanning}
+              className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-8 py-3 text-sm text-emerald-300 transition hover:bg-emerald-500/20 disabled:opacity-50"
+            >
+              {scanning ? "Loading demo…" : "Try demo workspace"}
+            </button>
+          </div>
+          {error && <p className="text-sm text-red-400">{error}</p>}
         </div>
       )}
     </div>

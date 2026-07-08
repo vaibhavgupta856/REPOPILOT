@@ -27,6 +27,7 @@ from app.services.repo_workspace import (
     load_pending_changes,
 )
 from app.services.repository_scanner import (
+    create_demo_workspace,
     create_workspace,
     list_summaries,
     load_summary,
@@ -71,6 +72,19 @@ async def create_blank_workspace(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Workspace creation failed: {exc}") from exc
+
+
+@router.post("/demo", response_model=ScanResponse)
+async def create_demo(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ScanResponse:
+    try:
+        return create_demo_workspace(db, user.id)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Demo workspace failed: {exc}") from exc
 
 
 @router.get("", response_model=list[RepositorySummary])

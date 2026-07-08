@@ -1,13 +1,17 @@
-# Deploy backend API on Render (free tier): https://render.com
-# Connect this repo → New Blueprint → select render.yaml
+# Deploy backend API on Render: https://render.com/deploy?repo=https://github.com/vaibhavgupta856/REPOPILOT
 services:
   - type: web
     name: repopilot-api
     runtime: python
+    plan: free
+    region: oregon
+    repo: https://github.com/vaibhavgupta856/REPOPILOT
+    branch: main
     rootDir: backend
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
+    autoDeploy: true
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.0"
@@ -16,4 +20,6 @@ services:
       - key: FRONTEND_URL
         value: https://frontend-chi-three-58.vercel.app
       - key: DATABASE_URL
-        value: sqlite:///./repopilot.db
+        value: sqlite:////opt/render/project/src/backend/data/reopilot.db
+      - key: WORKSPACE_DIR
+        value: /opt/render/project/src/backend/data/workspace
