@@ -176,6 +176,21 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
 
   const isMarkdown = selectedPath?.toLowerCase().endsWith(".md") ?? false;
 
+  /** Only highlight / accept lines the agent actually changed (not default repo content). */
+  const agentChangedLines = useCallback(
+    (path: string | null, changedLines: number[] | undefined): number[] => {
+      if (!path || !changedLines?.length) return [];
+      const meta = files.find((f) => f.path === path && !f.is_dir);
+      return meta?.has_agent_change ? changedLines : [];
+    },
+    [files],
+  );
+
+  const activeChangedLines = agentChangedLines(
+    selectedPath,
+    activeTab?.detail?.changed_lines,
+  );
+
   async function handleSave() {
     if (!selectedPath || !activeTab) return;
     setSaving(true);
@@ -291,7 +306,7 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
   ]);
 
   const acceptedForFile = accepted[selectedPath ?? ""] ?? [];
-  const pendingAgentLines = (activeTab?.detail?.changed_lines ?? []).filter(
+  const pendingAgentLines = activeChangedLines.filter(
     (line) => !acceptedForFile.includes(line),
   );
   const changedSet = new Set(pendingAgentLines);
@@ -311,7 +326,7 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
                 ref={editorRef}
                 path={selectedPath}
                 value={activeTab.content}
-                changedLines={activeTab.detail.changed_lines}
+                changedLines={activeChangedLines}
                 acceptedLines={accepted[selectedPath] ?? []}
                 settings={editorSettings}
                 onChange={updateContent}
@@ -330,7 +345,7 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
             ref={editorRef}
             path={selectedPath}
             value={activeTab.content}
-            changedLines={activeTab.detail.changed_lines}
+            changedLines={activeChangedLines}
             acceptedLines={accepted[selectedPath] ?? []}
             settings={editorSettings}
             onChange={updateContent}
