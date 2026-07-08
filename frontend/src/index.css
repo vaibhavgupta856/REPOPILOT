@@ -7,6 +7,9 @@
   --forge-glow: rgba(249, 115, 22, 0.35);
   --forge-accent: #f97316;
   --forge-accent-soft: #fb923c;
+  --forge-scrollbar-thumb: #3a3a42;
+  --forge-scrollbar-thumb-hover: #52525b;
+  --forge-scrollbar-track: #0a0a0e;
 }
 
 * {
@@ -29,6 +32,50 @@ body {
 
 #root {
   height: 100%;
+}
+
+/* Dark scrollbars — app-wide */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--forge-scrollbar-thumb) var(--forge-scrollbar-track);
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--forge-scrollbar-track);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--forge-scrollbar-thumb);
+  border: 2px solid var(--forge-scrollbar-track);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--forge-scrollbar-thumb-hover);
+}
+
+*::-webkit-scrollbar-corner {
+  background: var(--forge-scrollbar-track);
+}
+
+/* Monaco editor scrollbars */
+.monaco-editor .scrollbar.vertical,
+.monaco-editor .scrollbar.horizontal {
+  background: transparent !important;
+}
+
+.monaco-editor .scrollbar .slider {
+  background: var(--forge-scrollbar-thumb) !important;
+  border-radius: 999px !important;
+}
+
+.monaco-editor .scrollbar .slider:hover {
+  background: var(--forge-scrollbar-thumb-hover) !important;
 }
 
 .font-mono-forge {
@@ -306,20 +353,24 @@ body {
 
 .forge-terminal-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(16, 185, 129, 0.35) transparent;
+  scrollbar-color: var(--forge-scrollbar-thumb) var(--forge-scrollbar-track);
 }
 
 .forge-terminal-scroll::-webkit-scrollbar {
   width: 6px;
 }
 
+.forge-terminal-scroll::-webkit-scrollbar-track {
+  background: var(--forge-scrollbar-track);
+}
+
 .forge-terminal-scroll::-webkit-scrollbar-thumb {
-  background: rgba(16, 185, 129, 0.3);
+  background: var(--forge-scrollbar-thumb);
   border-radius: 999px;
 }
 
 .forge-terminal-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(16, 185, 129, 0.5);
+  background: var(--forge-scrollbar-thumb-hover);
 }
 
 .forge-terminal-running {

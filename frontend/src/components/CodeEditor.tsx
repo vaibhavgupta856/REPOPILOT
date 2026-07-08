@@ -74,6 +74,10 @@ export const CodeEditor = forwardRef<EditorHandle, CodeEditorProps>(function Cod
         "minimap.background": "#0c0c10",
         "editorStickyScroll.background": "#0a0a0e",
         "editorStickyScrollHover.background": "#ffffff10",
+        "scrollbar.shadow": "#00000000",
+        "scrollbarSlider.background": "#3a3a4280",
+        "scrollbarSlider.hoverBackground": "#52525b",
+        "scrollbarSlider.activeBackground": "#71717a",
       },
     });
     monaco.editor.setTheme("repopilot-dark");
