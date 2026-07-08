@@ -41,6 +41,27 @@ def read_original(
     return ""
 
 
+def read_baseline(
+    user_id: str,
+    repo_id: str,
+    workspace: Path,
+    rel_path: str,
+    pending: list[FileChange],
+) -> str:
+    """Baseline for diffing — agent snapshot if present, else current file content."""
+    rel = normalize_path(rel_path)
+    snap = originals_dir(user_id, repo_id) / rel
+    if snap.is_file():
+        return snap.read_text(encoding="utf-8", errors="replace")
+    change = next((c for c in pending if normalize_path(c.path) == rel), None)
+    if change and change.action == "create":
+        return ""
+    target = workspace / rel
+    if target.is_file():
+        return read_workspace_file(workspace, rel)
+    return ""
+
+
 def get_changed_line_indices(original: str, current: str) -> list[int]:
     orig_lines = original.splitlines()
     curr_lines = current.splitlines()
@@ -94,6 +115,28 @@ def write_workspace_file(workspace: Path, rel_path: str, content: str) -> None:
     target.write_text(content, encoding="utf-8")
 
 
+def _has_agent_change(
+    user_id: str,
+    repo_id: str,
+    workspace: Path,
+    rel_path: str,
+    pending: list[FileChange],
+    change_map: dict[str, str],
+    orig_paths: set[str],
+    is_file: bool,
+) -> bool:
+    if rel_path in change_map:
+        return True
+    if not is_file or rel_path not in orig_paths:
+        return False
+    try:
+        current = read_workspace_file(workspace, rel_path)
+        baseline = read_baseline(user_id, repo_id, workspace, rel_path, pending)
+        return bool(get_changed_line_indices(baseline, current))
+    except FileNotFoundError:
+        return False
+
+
 def build_file_list_for_repo(
     user_id: str, repo_id: str, workspace: Path, pending: list[FileChange]
 ) -> list[WorkspaceFileInfo]:
@@ -114,7 +157,9 @@ def build_file_list_for_repo(
             path=p,
             is_dir=p in dir_paths and p not in file_paths and p not in change_map,
             action=change_map.get(p),
-            has_agent_change=p in change_map or p in orig_paths,
+            has_agent_change=_has_agent_change(
+                user_id, repo_id, workspace, p, pending, change_map, orig_paths, p in file_paths
+            ),
         )
         for p in paths
     ]
@@ -134,7 +179,7 @@ def build_file_detail(
     else:
         change = next((c for c in pending if normalize_path(c.path) == rel), None)
         current = change.content if change and change.content else ""
-    original = read_original(user_id, repo_id, rel, pending)
+    original = read_baseline(user_id, repo_id, workspace, rel, pending)
     change_map = {normalize_path(c.path): c.action for c in pending}
     action = change_map.get(rel)
     changed = get_changed_line_indices(original, current)

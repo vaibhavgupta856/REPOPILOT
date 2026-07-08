@@ -290,7 +290,11 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
     { key: "b", ctrl: true, handler: () => setSidebarOpen((v) => !v) },
   ]);
 
-  const changedSet = new Set(activeTab?.detail?.changed_lines ?? []);
+  const acceptedForFile = accepted[selectedPath ?? ""] ?? [];
+  const pendingAgentLines = (activeTab?.detail?.changed_lines ?? []).filter(
+    (line) => !acceptedForFile.includes(line),
+  );
+  const changedSet = new Set(pendingAgentLines);
 
   const editorContent = (
     <div className="min-h-0 flex-1 overflow-hidden">
