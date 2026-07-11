@@ -12,8 +12,6 @@ def detect_provider_from_key(api_key: str | None) -> LLMProvider | None:
         return LLMProvider.OPENROUTER
     if lower.startswith("sk-ant-"):
         return LLMProvider.ANTHROPIC
-    if lower.startswith("crsr_"):
-        return LLMProvider.CURSOR
     if lower.startswith("gsk_"):
         return LLMProvider.GROQ
     if key.startswith("AIza"):
@@ -32,7 +30,6 @@ def provider_label(provider: LLMProvider) -> str:
         LLMProvider.GROQ: "Groq",
         LLMProvider.DEEPSEEK: "DeepSeek",
         LLMProvider.MISTRAL: "Mistral",
-        LLMProvider.CURSOR: "Cursor",
         LLMProvider.OLLAMA: "Ollama",
         LLMProvider.CUSTOM: "Custom",
         LLMProvider.AUTO: "Auto",

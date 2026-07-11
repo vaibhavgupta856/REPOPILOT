@@ -1,16 +1,14 @@
-"""Resolve and run LLM requests (LiteLLM + Cursor SDK)."""
+"""Resolve and run LLM requests via LiteLLM."""
 
 import json
 import os
 import re
-from pathlib import Path
 
 import litellm
 from pydantic import BaseModel
 
 from app.config import settings
 from app.services.api_key_detect import detect_provider_from_key
-from app.services.cursor_runner import run_cursor_prompt
 from app.services.llm_types import DEFAULT_MODELS, LLMProvider
 
 litellm.suppress_debug_info = True
@@ -72,8 +70,6 @@ def _configured_key_for_provider(config: LLMConfig) -> str | None:
         return os.getenv("DEEPSEEK_API_KEY")
     if config.provider == LLMProvider.MISTRAL:
         return os.getenv("MISTRAL_API_KEY")
-    if config.provider == LLMProvider.CURSOR:
-        return os.getenv("CURSOR_API_KEY")
     return None
 
 
@@ -129,8 +125,6 @@ def _apply_env_keys(config: LLMConfig) -> None:
             os.environ["DEEPSEEK_API_KEY"] = config.api_key
         elif config.provider == LLMProvider.MISTRAL:
             os.environ["MISTRAL_API_KEY"] = config.api_key
-        elif config.provider == LLMProvider.CURSOR:
-            os.environ["CURSOR_API_KEY"] = config.api_key
 
     if config.provider == LLMProvider.OLLAMA:
         base = config.base_url or settings.ollama_base_url
@@ -166,23 +160,6 @@ def extract_json(text: str) -> dict | list:
         ) from None
 
 
-def _cursor_complete(config: LLMConfig, system: str, user: str) -> str:
-    if not config.workspace_path:
-        raise ValueError("Cursor provider requires a repository workspace.")
-    api_key = _configured_key_for_provider(config)
-    if not api_key:
-        raise ValueError("Cursor API key missing.")
-
-    model = (config.model or DEFAULT_MODELS[LLMProvider.CURSOR]).removeprefix("cursor/")
-    return run_cursor_prompt(
-        api_key=api_key,
-        model=model,
-        workspace_path=config.workspace_path,
-        system=system,
-        user=user,
-    )
-
-
 def llm_complete(
     config: LLMConfig,
     system: str,
@@ -192,10 +169,6 @@ def llm_complete(
 ) -> str:
     config = resolve_llm_config(config)
     _assert_provider_credentials(config)
-
-    if config.provider == LLMProvider.CURSOR:
-        return _cursor_complete(config, system, user)
-
     _apply_env_keys(config)
     model = _resolve_model(config)
 

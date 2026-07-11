@@ -19,8 +19,6 @@ def format_llm_error(exc: Exception) -> str:
             return "Invalid OpenRouter API key. Create one at https://openrouter.ai/keys"
         if "groq" in msg.lower():
             return "Invalid Groq API key. Create one at https://console.groq.com/keys"
-        if "cursor" in msg.lower() or "crsr_" in msg.lower():
-            return "Invalid Cursor API key. Create one at https://cursor.com/dashboard/integrations"
         return "Invalid API key. Check your key in the provider dashboard."
 
     if "credit balance is too low" in msg.lower() or "purchase credits" in msg.lower():

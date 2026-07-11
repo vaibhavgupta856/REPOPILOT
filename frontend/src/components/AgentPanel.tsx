@@ -23,7 +23,6 @@ const ADVANCED_PROVIDERS: { id: LLMProvider; label: string }[] = [
   { id: "gemini", label: "Gemini" },
   { id: "deepseek", label: "DeepSeek" },
   { id: "mistral", label: "Mistral" },
-  { id: "cursor", label: "Cursor" },
   { id: "custom", label: "Other (LiteLLM)" },
   { id: "ollama", label: "Ollama" },
 ];
@@ -31,10 +30,6 @@ const ADVANCED_PROVIDERS: { id: LLMProvider; label: string }[] = [
 function isLocalDeployment(): boolean {
   const host = window.location.hostname;
   return host === "localhost" || host === "127.0.0.1";
-}
-
-function isWindowsClient(): boolean {
-  return /Win/i.test(navigator.userAgent);
 }
 
 export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
@@ -56,8 +51,6 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
       setShowAdvanced(true);
     }
   }, [apiKey, detectedProvider, useOllama]);
-  const cursorBlockedOnWindows =
-    !useOllama && (detectedProvider === "cursor" || providerOverride === "cursor") && isWindowsClient();
   const effectiveProvider: LLMProvider = useOllama
     ? "ollama"
     : showAdvanced && providerOverride !== "auto"
@@ -79,12 +72,6 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (cursorBlockedOnWindows) {
-      setError(
-        "Cursor keys do not work on Windows in RepoPilot. Use an OpenRouter key (sk-or-v1-…) instead.",
-      );
-      return;
-    }
     if (ollamaUnavailableOnHost) {
       setError(
         "Ollama is not available on this hosted demo. Clone RepoPilot and run it locally with Ollama installed.",
@@ -173,7 +160,7 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
               onChange={(e) => setApiKey(e.target.value)}
               className="forge-input w-full rounded-xl px-3 py-2.5 text-xs text-zinc-200"
             />
-            {apiKey.trim() && detectedProvider && !cursorBlockedOnWindows && (
+            {apiKey.trim() && detectedProvider && (
               <p className="mt-2 text-[11px] text-emerald-400/90">
                 Detected: <span className="font-medium">{providerLabel(detectedProvider)}</span>
                 {modelHint && (
@@ -194,23 +181,6 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
               <p className="mt-2 text-[11px] text-emerald-400/90">
                 Using custom route: <span className="font-medium">{model.trim()}</span>
               </p>
-            )}
-            {cursorBlockedOnWindows && (
-              <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-950/25 px-3 py-2 text-[11px] text-amber-200/90">
-                <p className="font-medium text-amber-300">Cursor is not supported on Windows</p>
-                <p className="mt-1">
-                  The Cursor SDK fails on Windows. Use a free{" "}
-                  <a
-                    href="https://openrouter.ai/keys"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="underline"
-                  >
-                    OpenRouter key
-                  </a>{" "}
-                  (starts with <code className="text-amber-100">sk-or-v1-</code>) — we auto-detect it.
-                </p>
-              </div>
             )}
             <p className="mt-1.5 text-[11px] text-zinc-600">
               Key is never stored — only sent with this run.
@@ -344,7 +314,6 @@ export function AgentPanel({ repo, onTaskComplete }: AgentPanelProps) {
             loading ||
             !task.trim() ||
             ollamaUnavailableOnHost ||
-            cursorBlockedOnWindows ||
             needsCustomModel
           }
           className={`forge-btn-primary flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm ${loading ? "forge-agent-working" : ""}`}

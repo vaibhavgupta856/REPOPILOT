@@ -10,7 +10,6 @@ class LLMProvider(str, Enum):
     GROQ = "groq"
     DEEPSEEK = "deepseek"
     MISTRAL = "mistral"
-    CURSOR = "cursor"
     OLLAMA = "ollama"
     CUSTOM = "custom"
 
@@ -23,7 +22,6 @@ DEFAULT_MODELS: dict[LLMProvider, str] = {
     LLMProvider.GROQ: "llama-3.1-8b-instant",
     LLMProvider.DEEPSEEK: "deepseek-chat",
     LLMProvider.MISTRAL: "mistral-small-latest",
-    LLMProvider.CURSOR: "composer-2.5",
     LLMProvider.OLLAMA: "llama3.2",
     LLMProvider.CUSTOM: "groq/llama-3.1-8b-instant",
 }

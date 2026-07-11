@@ -163,7 +163,6 @@ export type LLMProvider =
   | "groq"
   | "deepseek"
   | "mistral"
-  | "cursor"
   | "ollama"
   | "custom";
 export type TaskStatus =
