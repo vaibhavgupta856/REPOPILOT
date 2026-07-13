@@ -2,9 +2,10 @@ import { resolveApiBase, isHostedFrontend } from "./config";
 
 const API_BASE = resolveApiBase();
 const TOKEN_KEY = "repopilot_auth_token";
-const HOSTED_RETRY_ATTEMPTS = 4;
-const HOSTED_RETRY_DELAY_MS = 3500;
-const FETCH_TIMEOUT_MS = 50_000;
+const HOSTED_RETRY_ATTEMPTS = 3;
+const HOSTED_RETRY_DELAY_MS = 2000;
+const FETCH_TIMEOUT_MS = 20_000;
+const AUTH_FETCH_TIMEOUT_MS = 12_000;
 
 export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -71,11 +72,14 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
   }
 
   const url = `${API_BASE}${path}`;
-  const attempts = isHostedFrontend() ? HOSTED_RETRY_ATTEMPTS : 1;
+  const isAuthBoot =
+    path === "/auth/me" || path === "/auth/guest" || path.startsWith("/auth/");
+  const timeoutMs = isAuthBoot ? AUTH_FETCH_TIMEOUT_MS : FETCH_TIMEOUT_MS;
+  const attempts = isHostedFrontend() ? (isAuthBoot ? 2 : HOSTED_RETRY_ATTEMPTS) : 1;
 
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
-      return await fetchWithTimeout(url, { ...init, headers }, FETCH_TIMEOUT_MS);
+      return await fetchWithTimeout(url, { ...init, headers }, timeoutMs);
     } catch {
       if (attempt < attempts - 1) {
         await sleep(HOSTED_RETRY_DELAY_MS * (attempt + 1));

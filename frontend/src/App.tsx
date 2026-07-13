@@ -25,16 +25,16 @@ import "./index.css";
 const API_HEALTH = resolveHealthBase();
 
 async function checkBackend(): Promise<boolean> {
-  const attempts = 4;
+  const attempts = 3;
   for (let i = 0; i < attempts; i++) {
     try {
       const res = await fetch(`${API_HEALTH}/health`, {
-        signal: AbortSignal.timeout(50_000),
+        signal: AbortSignal.timeout(12_000),
       });
       if (res.ok) return true;
     } catch {
       if (i < attempts - 1) {
-        await new Promise((r) => setTimeout(r, 3500 * (i + 1)));
+        await new Promise((r) => setTimeout(r, 2000 * (i + 1)));
       }
     }
   }
@@ -56,22 +56,44 @@ export default function App() {
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+    const safety = window.setTimeout(() => {
+      if (!cancelled) {
+        setAuthLoading(false);
+      }
+    }, 20_000);
+
     const token = getAuthToken();
     if (!token) {
+      clearTimeout(safety);
       setAuthLoading(false);
       return;
     }
+
     getCurrentUser()
       .then((u) => {
+        if (cancelled) return;
         setUser(u);
         return listRepositories();
       })
-      .then(setHistory)
-      .catch(() => {
-        clearAuthToken();
-        setUser(null);
+      .then((repos) => {
+        if (!cancelled && repos) setHistory(repos);
       })
-      .finally(() => setAuthLoading(false));
+      .catch(() => {
+        if (!cancelled) {
+          clearAuthToken();
+          setUser(null);
+        }
+      })
+      .finally(() => {
+        clearTimeout(safety);
+        if (!cancelled) setAuthLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+      clearTimeout(safety);
+    };
   }, []);
 
   function handleAuthenticated(u: AuthUser) {

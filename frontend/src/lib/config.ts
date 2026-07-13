@@ -5,27 +5,42 @@ function isTemporaryTunnel(url: string): boolean {
   return url.includes("trycloudflare.com") || url.includes("loca.lt");
 }
 
+/** Vercel preview/static hosts are not the API — never use them as backend. */
+function isUnusableBackend(url: string): boolean {
+  return (
+    isTemporaryTunnel(url) ||
+    url.includes("vercel.app") ||
+    url.includes("localhost") ||
+    url.includes("127.0.0.1")
+  );
+}
+
+function normalizeApiBase(url: string): string {
+  const base = url.trim().replace(/\/$/, "");
+  return base.endsWith("/api") ? base : `${base}/api`;
+}
+
 /** Resolve backend API base URL from Vercel / Vite env vars. */
 export function resolveApiBase(): string {
+  if (typeof window !== "undefined" && isHostedFrontend()) {
+    const direct = import.meta.env.VITE_API_URL as string | undefined;
+    if (direct?.trim()) {
+      const resolved = normalizeApiBase(direct);
+      if (!isUnusableBackend(resolved)) {
+        return resolved;
+      }
+    }
+    return PRODUCTION_API_BASE;
+  }
+
   const direct = import.meta.env.VITE_API_URL as string | undefined;
   if (direct?.trim()) {
-    const trimmed = direct.trim().replace(/\/$/, "");
-    if (!isHostedFrontend() || !isTemporaryTunnel(trimmed)) {
-      return trimmed;
-    }
+    return normalizeApiBase(direct);
   }
 
   const backend = import.meta.env.VITE_BACKEND_URL as string | undefined;
   if (backend?.trim()) {
-    const base = backend.trim().replace(/\/$/, "");
-    const resolved = base.endsWith("/api") ? base : `${base}/api`;
-    if (!isHostedFrontend() || !isTemporaryTunnel(resolved)) {
-      return resolved;
-    }
-  }
-
-  if (isHostedFrontend()) {
-    return PRODUCTION_API_BASE;
+    return normalizeApiBase(backend);
   }
 
   return "http://localhost:8000/api";
