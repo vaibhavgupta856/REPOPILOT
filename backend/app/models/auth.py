@@ -17,6 +17,10 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
 
 
+class GuestAuthResponse(TokenResponse):
+    user: "UserResponse"
+
+
 class UserResponse(BaseModel):
     id: str
     email: str | None

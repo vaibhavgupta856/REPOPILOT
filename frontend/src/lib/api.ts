@@ -1,11 +1,11 @@
-import { resolveApiBase, isHostedFrontend } from "./config";
+import { resolveApiBase, isHostedFrontend, resolveHealthBase } from "./config";
 
 const API_BASE = resolveApiBase();
 const TOKEN_KEY = "repopilot_auth_token";
 const HOSTED_RETRY_ATTEMPTS = 3;
 const HOSTED_RETRY_DELAY_MS = 2000;
 const FETCH_TIMEOUT_MS = 20_000;
-const AUTH_FETCH_TIMEOUT_MS = 12_000;
+const AUTH_FETCH_TIMEOUT_MS = isHostedFrontend() ? 60_000 : 12_000;
 
 export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -120,6 +120,20 @@ export interface TokenResponse {
   token_type: string;
 }
 
+export interface GuestAuthResponse extends TokenResponse {
+  user: AuthUser;
+}
+
+/** Wake Render free-tier backend before auth (cold starts can take 30s+). */
+export async function warmupHostedApi(): Promise<void> {
+  if (!isHostedFrontend()) return;
+  try {
+    await fetch(`${resolveHealthBase()}/health`, { signal: AbortSignal.timeout(60_000) });
+  } catch {
+    // guest login will surface a clearer error if still unreachable
+  }
+}
+
 export async function registerUser(payload: {
   email: string;
   password: string;
@@ -145,7 +159,7 @@ export async function loginUser(payload: {
   return res.json();
 }
 
-export async function guestLogin(): Promise<TokenResponse> {
+export async function guestLogin(): Promise<GuestAuthResponse> {
   const res = await apiFetch("/auth/guest", { method: "POST" });
   if (!res.ok) throw new Error(await parseError(res, "Guest login failed"));
   return res.json();

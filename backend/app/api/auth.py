@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.deps import get_current_user
-from app.models.auth import LoginRequest, RegisterRequest, TokenResponse, UserResponse
+from app.models.auth import GuestAuthResponse, LoginRequest, RegisterRequest, TokenResponse, UserResponse
 from app.services.auth_service import (
     authenticate_user,
     create_access_token,
@@ -33,10 +33,13 @@ def login(body: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse:
     return TokenResponse(access_token=create_access_token(user.id))
 
 
-@router.post("/guest", response_model=TokenResponse)
-def guest_login(db: Session = Depends(get_db)) -> TokenResponse:
+@router.post("/guest", response_model=GuestAuthResponse)
+def guest_login(db: Session = Depends(get_db)) -> GuestAuthResponse:
     user = create_guest_user(db)
-    return TokenResponse(access_token=create_access_token(user.id))
+    return GuestAuthResponse(
+        access_token=create_access_token(user.id),
+        user=UserResponse.model_validate(user),
+    )
 
 
 @router.get("/me", response_model=UserResponse)

@@ -1,10 +1,11 @@
 import { useState } from "react";
 import {
-  guestLogin,
   getCurrentUser,
+  guestLogin,
   loginUser,
   registerUser,
   setAuthToken,
+  warmupHostedApi,
   type AuthUser,
 } from "../lib/api";
 import { Logo } from "./Logo";
@@ -25,6 +26,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -47,19 +49,21 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
   }
 
   async function handleGuest() {
-    setLoading(true);
+    setGuestLoading(true);
     setError(null);
     try {
+      await warmupHostedApi();
       const result = await guestLogin();
       setAuthToken(result.access_token);
-      const user = await getCurrentUser();
-      onAuthenticated(user, result.access_token);
+      onAuthenticated(result.user, result.access_token);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Guest login failed");
     } finally {
-      setLoading(false);
+      setGuestLoading(false);
     }
   }
+
+  const busy = loading || guestLoading;
 
   return (
     <div className="forge-bg relative flex h-full min-h-0 items-center justify-center overflow-hidden p-6">
@@ -117,7 +121,7 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
             />
             <button
               type="submit"
-              disabled={loading}
+              disabled={busy}
               className="forge-btn-primary mt-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm"
             >
               {loading && <div className="forge-spinner !h-4 !w-4 !border-black/20 !border-t-black" />}
@@ -125,12 +129,18 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
             </button>
             <button
               type="button"
-              disabled={loading}
+              disabled={busy}
               onClick={handleGuest}
-              className="forge-btn-ghost rounded-xl py-2.5 text-sm text-zinc-200 disabled:opacity-50"
+              className="forge-btn-ghost flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm text-zinc-200 disabled:opacity-50"
             >
-              Continue as Guest
+              {guestLoading && <div className="forge-spinner !h-4 !w-4 !border-white/20 !border-t-white" />}
+              {guestLoading ? "Waking up server…" : "Continue as Guest"}
             </button>
+            {guestLoading && (
+              <p className="text-center text-[11px] text-zinc-500">
+                First visit may take up to 30 seconds while the free API wakes up.
+              </p>
+            )}
           </form>
 
           {error && (
