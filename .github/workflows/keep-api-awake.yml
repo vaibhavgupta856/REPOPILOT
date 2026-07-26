@@ -6,6 +6,10 @@ on:
   schedule:
     - cron: "*/10 * * * *"
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/keep-api-awake.yml"
 
 jobs:
   ping:
@@ -15,15 +19,18 @@ jobs:
       - name: Ping Render health endpoint
         run: |
           URL="https://repopilot-api.onrender.com/health"
-          for i in 1 2 3 4 5; do
+          for i in 1 2 3 4 5 6; do
             echo "Attempt $i: GET $URL"
-            if curl -fsS --max-time 90 "$URL"; then
+            CODE=$(curl -sS -o /tmp/health.json -w "%{http_code}" --max-time 90 "$URL" || echo "000")
+            echo "HTTP $CODE"
+            if [ "$CODE" = "200" ]; then
+              cat /tmp/health.json || true
               echo ""
               echo "API is awake."
               exit 0
             fi
-            echo "Not ready yet; waiting 15s…"
-            sleep 15
+            echo "Not ready yet; waiting 20s…"
+            sleep 20
           done
           echo "Keep-alive failed after retries (API may still be deploying)."
           exit 1

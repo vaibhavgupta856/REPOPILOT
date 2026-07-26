@@ -1,31 +1,55 @@
+# Optional: manually redeploy Render via API when RENDER_API_KEY is set.
+# Does NOT run on every push (avoids noisy failures when the secret is missing).
 name: Deploy Render Backend
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "backend/**"
-      - "render.yaml"
 
 jobs:
   deploy:
-    if: ${{ secrets.RENDER_API_KEY != '' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Check Render API key
+        id: check
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "RENDER_API_KEY is not set in repo Secrets."
+            echo "Add it under Settings → Secrets and variables → Actions, or redeploy from the Render dashboard."
+            exit 0
+          fi
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
       - uses: actions/checkout@v4
+        if: steps.check.outputs.skip != 'true'
 
       - name: Trigger Render deploy
+        if: steps.check.outputs.skip != 'true'
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
         run: |
-          SERVICE_ID=$(curl -sS \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            "https://api.render.com/v1/services?name=repopilot-api&limit=1" \
-            | python -c "import sys,json; d=json.load(sys.stdin); print(d[0]['service']['id'] if d else '')")
+          RESP=$(curl -sS \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
+            "https://api.render.com/v1/services?limit=50")
+          SERVICE_ID=$(echo "$RESP" | python -c "
+import sys, json
+data = json.load(sys.stdin)
+for item in data:
+    svc = item.get('service') or item
+    name = svc.get('name', '')
+    if name == 'repopilot-api':
+        print(svc.get('id', ''))
+        break
+")
           if [ -z "$SERVICE_ID" ]; then
-            echo "Render service not found. Create it once:"
-            echo "https://render.com/deploy?repo=https://github.com/vaibhavgupta856/REPOPILOT"
+            echo "Render service 'repopilot-api' not found."
+            echo "Deploy once: https://render.com/deploy?repo=https://github.com/vaibhavgupta856/REPOPILOT"
             exit 1
           fi
           curl -sS -X POST \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
+            -H "Authorization: Bearer $RENDER_API_KEY" \
             "https://api.render.com/v1/services/${SERVICE_ID}/deploys"
+          echo ""
+          echo "Deploy triggered for $SERVICE_ID"
