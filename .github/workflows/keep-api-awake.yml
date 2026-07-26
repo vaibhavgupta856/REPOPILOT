@@ -1,0 +1,29 @@
+# Keeps the Render free-tier API awake so visitors don't wait ~1 minute for a cold start.
+# Render sleeps after ~15 minutes idle; this pings /health every 10 minutes.
+name: Keep API Awake
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping Render health endpoint
+        run: |
+          URL="https://repopilot-api.onrender.com/health"
+          for i in 1 2 3 4 5; do
+            echo "Attempt $i: GET $URL"
+            if curl -fsS --max-time 90 "$URL"; then
+              echo ""
+              echo "API is awake."
+              exit 0
+            fi
+            echo "Not ready yet; waiting 15s…"
+            sleep 15
+          done
+          echo "Keep-alive failed after retries (API may still be deploying)."
+          exit 1
