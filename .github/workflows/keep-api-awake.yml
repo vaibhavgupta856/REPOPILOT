@@ -1,10 +1,12 @@
-# Keeps the Render free-tier API awake so visitors don't wait ~1 minute for a cold start.
-# Render sleeps after ~15 minutes idle; this pings /health every 10 minutes.
+# Keeps the Render free-tier API awake.
+# GitHub schedule cron is often delayed (can be 30–40+ min apart), while Render
+# sleeps after ~15 min idle. Each run therefore pings for ~32 minutes so coverage
+# overlaps and the API rarely sleeps.
 name: Keep API Awake
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "*/5 * * * *"
   workflow_dispatch:
   push:
     branches: [main]
@@ -14,23 +16,24 @@ on:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 40
     steps:
-      - name: Ping Render health endpoint
+      - name: Keep Render API warm
         run: |
           URL="https://repopilot-api.onrender.com/health"
-          for i in 1 2 3 4 5 6; do
-            echo "Attempt $i: GET $URL"
+          # ~32 minutes of pings every 2 minutes (covers GitHub cron gaps)
+          for i in $(seq 1 16); do
+            echo "==== Ping $i/16 ===="
             CODE=$(curl -sS -o /tmp/health.json -w "%{http_code}" --max-time 90 "$URL" || echo "000")
             echo "HTTP $CODE"
             if [ "$CODE" = "200" ]; then
               cat /tmp/health.json || true
               echo ""
-              echo "API is awake."
-              exit 0
+            else
+              echo "Wake attempt failed; will retry next cycle."
             fi
-            echo "Not ready yet; waiting 20s…"
-            sleep 20
+            if [ "$i" -lt 16 ]; then
+              sleep 120
+            fi
           done
-          echo "Keep-alive failed after retries (API may still be deploying)."
-          exit 1
+          echo "Keep-alive window finished."

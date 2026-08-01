@@ -121,16 +121,19 @@ export interface TokenResponse {
 }
 
 export interface GuestAuthResponse extends TokenResponse {
-  user: AuthUser;
+  user?: AuthUser;
 }
 
 /** Wake Render free-tier backend before auth (cold starts can take 30s+). */
-export async function warmupHostedApi(): Promise<void> {
-  if (!isHostedFrontend()) return;
+export async function warmupHostedApi(): Promise<boolean> {
+  if (!isHostedFrontend()) return true;
   try {
-    await fetch(`${resolveHealthBase()}/health`, { signal: AbortSignal.timeout(60_000) });
+    const res = await fetch(`${resolveHealthBase()}/health`, {
+      signal: AbortSignal.timeout(90_000),
+    });
+    return res.ok;
   } catch {
-    // guest login will surface a clearer error if still unreachable
+    return false;
   }
 }
 
