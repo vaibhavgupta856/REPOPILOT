@@ -51,7 +51,7 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
   const [tabState, setTabState] = useState<Record<string, TabState>>({});
   const [selectedPath, setSelectedPath] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [terminalOpen, setTerminalOpen] = useState(false);
+  const [terminalOpen, setTerminalOpen] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarView, setSidebarView] = useState<SidebarView>("explorer");
   const [commandOpen, setCommandOpen] = useState(false);
@@ -442,7 +442,7 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
   const editorAndTerminal = (
     <SplitPane
       orientation="vertical"
-      initialRatio={0.82}
+      initialRatio={0.86}
       minFirst={160}
       minSecond={72}
       secondCollapsed={!terminalOpen}
