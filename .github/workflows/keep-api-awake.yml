@@ -1,7 +1,8 @@
 # Keeps the Render free-tier API awake.
-# GitHub schedule cron is often delayed (can be 30–40+ min apart), while Render
-# sleeps after ~15 min idle. Each run therefore pings for ~32 minutes so coverage
-# overlaps and the API rarely sleeps.
+#
+# GitHub's free schedule is unreliable (often ~60–90 min between runs), while
+# Render sleeps after ~15 min idle. Each run therefore pings for ~90 minutes so
+# consecutive runs overlap and the API stays warm almost continuously.
 name: Keep API Awake
 
 on:
@@ -16,14 +17,14 @@ on:
 jobs:
   ping:
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 100
     steps:
-      - name: Keep Render API warm
+      - name: Keep Render API warm for 90 minutes
         run: |
           URL="https://repopilot-api.onrender.com/health"
-          # ~32 minutes of pings every 2 minutes (covers GitHub cron gaps)
-          for i in $(seq 1 16); do
-            echo "==== Ping $i/16 ===="
+          # 60 pings × 90s ≈ 90 minutes of continuous coverage
+          for i in $(seq 1 60); do
+            echo "==== Ping $i/60 ===="
             CODE=$(curl -sS -o /tmp/health.json -w "%{http_code}" --max-time 90 "$URL" || echo "000")
             echo "HTTP $CODE"
             if [ "$CODE" = "200" ]; then
@@ -32,8 +33,8 @@ jobs:
             else
               echo "Wake attempt failed; will retry next cycle."
             fi
-            if [ "$i" -lt 16 ]; then
-              sleep 120
+            if [ "$i" -lt 60 ]; then
+              sleep 90
             fi
           done
           echo "Keep-alive window finished."
