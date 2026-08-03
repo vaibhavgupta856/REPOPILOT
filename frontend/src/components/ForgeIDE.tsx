@@ -442,7 +442,7 @@ export function ForgeIDE({ repoId, refreshKey = 0 }: ForgeIDEProps) {
   const editorAndTerminal = (
     <SplitPane
       orientation="vertical"
-      initialRatio={0.86}
+      initialRatio={0.72}
       minFirst={160}
       minSecond={72}
       secondCollapsed={!terminalOpen}
