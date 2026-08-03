@@ -59,9 +59,10 @@ export default function App() {
     let cancelled = false;
     const safety = window.setTimeout(() => {
       if (!cancelled) {
+        // Stop blocking on the spinner; AuthPage will keep warming the API
         setAuthLoading(false);
       }
-    }, 20_000);
+    }, 6_000);
 
     const token = getAuthToken();
     if (!token) {

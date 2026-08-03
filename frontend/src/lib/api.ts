@@ -5,7 +5,7 @@ const TOKEN_KEY = "repopilot_auth_token";
 const HOSTED_RETRY_ATTEMPTS = 3;
 const HOSTED_RETRY_DELAY_MS = 2000;
 const FETCH_TIMEOUT_MS = 20_000;
-const AUTH_FETCH_TIMEOUT_MS = isHostedFrontend() ? 60_000 : 12_000;
+const AUTH_FETCH_TIMEOUT_MS = isHostedFrontend() ? 25_000 : 12_000;
 
 export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);

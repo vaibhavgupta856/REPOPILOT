@@ -18,6 +18,10 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     timeout-minutes: 100
+    # Never cancel an in-progress keep-alive — overlapping runs keep Render warm
+    concurrency:
+      group: keep-api-awake
+      cancel-in-progress: false
     steps:
       - name: Keep Render API warm for 90 minutes
         run: |
