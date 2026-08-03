@@ -43,7 +43,8 @@ async function checkBackend(): Promise<boolean> {
 
 export default function App() {
   const [user, setUser] = useState<AuthUser | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
+  // Never block first paint on a cold API — show auth UI immediately
+  const [authLoading, setAuthLoading] = useState(false);
   const [githubUrl, setGithubUrl] = useState("");
   const [workspaceName, setWorkspaceName] = useState("");
   const [openMode, setOpenMode] = useState<"clone" | "workspace">("clone");
@@ -56,21 +57,11 @@ export default function App() {
   const [downloading, setDownloading] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
-    const safety = window.setTimeout(() => {
-      if (!cancelled) {
-        // Stop blocking on the spinner; AuthPage will keep warming the API
-        setAuthLoading(false);
-      }
-    }, 6_000);
-
     const token = getAuthToken();
-    if (!token) {
-      clearTimeout(safety);
-      setAuthLoading(false);
-      return;
-    }
+    if (!token) return;
 
+    let cancelled = false;
+    // Quiet background restore — UI already visible
     getCurrentUser()
       .then((u) => {
         if (cancelled) return;
@@ -85,15 +76,10 @@ export default function App() {
           clearAuthToken();
           setUser(null);
         }
-      })
-      .finally(() => {
-        clearTimeout(safety);
-        if (!cancelled) setAuthLoading(false);
       });
 
     return () => {
       cancelled = true;
-      clearTimeout(safety);
     };
   }, []);
 

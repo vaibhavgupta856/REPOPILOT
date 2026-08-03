@@ -5,7 +5,8 @@ const TOKEN_KEY = "repopilot_auth_token";
 const HOSTED_RETRY_ATTEMPTS = 3;
 const HOSTED_RETRY_DELAY_MS = 2000;
 const FETCH_TIMEOUT_MS = 20_000;
-const AUTH_FETCH_TIMEOUT_MS = isHostedFrontend() ? 25_000 : 12_000;
+const AUTH_FETCH_TIMEOUT_MS = isHostedFrontend() ? 90_000 : 12_000;
+const SESSION_FETCH_TIMEOUT_MS = 8_000;
 
 export function getAuthToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
@@ -58,7 +59,11 @@ function apiUnreachableError(): Error {
   );
 }
 
-async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+async function apiFetch(
+  path: string,
+  init: RequestInit = {},
+  options?: { timeoutMs?: number; attempts?: number },
+): Promise<Response> {
   const headers = authHeaders(
     init.body && !(init.headers as Record<string, string>)?.["Content-Type"]
       ? { "Content-Type": "application/json" }
@@ -74,8 +79,11 @@ async function apiFetch(path: string, init: RequestInit = {}): Promise<Response>
   const url = `${API_BASE}${path}`;
   const isAuthBoot =
     path === "/auth/me" || path === "/auth/guest" || path.startsWith("/auth/");
-  const timeoutMs = isAuthBoot ? AUTH_FETCH_TIMEOUT_MS : FETCH_TIMEOUT_MS;
-  const attempts = isHostedFrontend() ? (isAuthBoot ? 2 : HOSTED_RETRY_ATTEMPTS) : 1;
+  const timeoutMs =
+    options?.timeoutMs ?? (isAuthBoot ? AUTH_FETCH_TIMEOUT_MS : FETCH_TIMEOUT_MS);
+  const attempts =
+    options?.attempts ??
+    (isHostedFrontend() ? (isAuthBoot ? 2 : HOSTED_RETRY_ATTEMPTS) : 1);
 
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
@@ -128,8 +136,9 @@ export interface GuestAuthResponse extends TokenResponse {
 export async function warmupHostedApi(): Promise<boolean> {
   if (!isHostedFrontend()) return true;
   try {
+    // Short background ping only — never block UI on this
     const res = await fetch(`${resolveHealthBase()}/health`, {
-      signal: AbortSignal.timeout(90_000),
+      signal: AbortSignal.timeout(15_000),
     });
     return res.ok;
   } catch {
@@ -163,13 +172,19 @@ export async function loginUser(payload: {
 }
 
 export async function guestLogin(): Promise<GuestAuthResponse> {
-  const res = await apiFetch("/auth/guest", { method: "POST" });
+  // One long attempt — this request itself wakes a sleeping Render instance
+  const res = await apiFetch(
+    "/auth/guest",
+    { method: "POST" },
+    { timeoutMs: isHostedFrontend() ? 90_000 : 12_000, attempts: 1 },
+  );
   if (!res.ok) throw new Error(await parseError(res, "Guest login failed"));
   return res.json();
 }
 
 export async function getCurrentUser(): Promise<AuthUser> {
-  const res = await apiFetch("/auth/me");
+  // Fail fast on session restore so the login page isn't blocked
+  const res = await apiFetch("/auth/me", {}, { timeoutMs: SESSION_FETCH_TIMEOUT_MS, attempts: 1 });
   if (!res.ok) throw new Error("Not authenticated");
   return res.json();
 }

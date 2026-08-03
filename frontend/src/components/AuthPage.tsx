@@ -20,8 +20,6 @@ const FEATURES = [
   "AI agent writes & tests code",
 ];
 
-type ApiStatus = "checking" | "ready" | "waking" | "offline";
-
 export function AuthPage({ onAuthenticated }: AuthPageProps) {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
@@ -30,43 +28,10 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
   const [loading, setLoading] = useState(false);
   const [guestLoading, setGuestLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
 
+  // Warm API in the background only — never block the UI on it
   useEffect(() => {
-    let cancelled = false;
-    let retry: number | undefined;
-    setApiStatus("checking");
-    const started = Date.now();
-
-    const pollUntilReady = () => {
-      retry = window.setInterval(() => {
-        warmupHostedApi().then((ready) => {
-          if (cancelled) return;
-          if (ready) {
-            if (retry) clearInterval(retry);
-            setApiStatus("ready");
-          } else if (Date.now() - started > 90_000) {
-            if (retry) clearInterval(retry);
-            setApiStatus("offline");
-          }
-        });
-      }, 4000);
-    };
-
-    warmupHostedApi().then((ok) => {
-      if (cancelled) return;
-      if (ok) {
-        setApiStatus("ready");
-        return;
-      }
-      setApiStatus("waking");
-      pollUntilReady();
-    });
-
-    return () => {
-      cancelled = true;
-      if (retry) clearInterval(retry);
-    };
+    void warmupHostedApi();
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -74,10 +39,6 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
     setLoading(true);
     setError(null);
     try {
-      if (apiStatus !== "ready") {
-        setApiStatus("waking");
-        await warmupHostedApi();
-      }
       const result =
         mode === "login"
           ? await loginUser({ email, password })
@@ -96,30 +57,24 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
     setGuestLoading(true);
     setError(null);
     try {
-      if (apiStatus !== "ready") {
-        setApiStatus("waking");
-        await warmupHostedApi();
-      }
+      // Don't await warmup — guest login itself wakes the server
+      void warmupHostedApi();
       const result = await guestLogin();
       setAuthToken(result.access_token);
       const user = result.user ?? (await getCurrentUser());
       onAuthenticated(user, result.access_token);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Guest login failed");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Guest login failed. If the free server was asleep, wait a few seconds and try again.",
+      );
     } finally {
       setGuestLoading(false);
     }
   }
 
   const busy = loading || guestLoading;
-  const statusLabel =
-    apiStatus === "ready"
-      ? "Server ready"
-      : apiStatus === "waking"
-        ? "Waking server…"
-        : apiStatus === "offline"
-          ? "Server slow to respond — try again"
-          : "Connecting…";
 
   return (
     <div className="forge-bg relative flex h-full min-h-0 items-center justify-center overflow-hidden p-6">
@@ -127,22 +82,8 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
 
       <div className="relative w-full max-w-md sm:max-w-lg">
         <div className="forge-glass-strong mb-6 rounded-2xl p-8 shadow-2xl shadow-black/40">
-          <div className="mb-6 flex items-start justify-between gap-3">
+          <div className="mb-8">
             <Logo size="md" />
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-medium ${
-                apiStatus === "ready"
-                  ? "bg-emerald-500/15 text-emerald-300"
-                  : apiStatus === "offline"
-                    ? "bg-red-500/15 text-red-300"
-                    : "bg-amber-500/15 text-amber-200"
-              }`}
-            >
-              {(apiStatus === "checking" || apiStatus === "waking") && (
-                <span className="forge-spinner !h-2.5 !w-2.5 !border-current/30 !border-t-current" />
-              )}
-              {statusLabel}
-            </span>
           </div>
 
           <div className="mb-6 flex rounded-xl bg-black/30 p-1">
@@ -204,18 +145,8 @@ export function AuthPage({ onAuthenticated }: AuthPageProps) {
               className="forge-btn-ghost flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm text-zinc-200 disabled:opacity-50"
             >
               {guestLoading && <div className="forge-spinner !h-4 !w-4 !border-white/20 !border-t-white" />}
-              {guestLoading
-                ? apiStatus === "waking" || apiStatus === "checking"
-                  ? "Waking up server…"
-                  : "Signing in…"
-                : "Continue as Guest"}
+              {guestLoading ? "Signing in…" : "Continue as Guest"}
             </button>
-            {(guestLoading || apiStatus === "waking") && (
-              <p className="text-center text-[11px] text-zinc-500">
-                Free hosting may take up to a minute after idle. The page starts waking the server
-                as soon as you open it.
-              </p>
-            )}
           </form>
 
           {error && (
